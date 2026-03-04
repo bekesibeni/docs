@@ -1,0 +1,184 @@
+---
+title: "Deposits"
+description: "How to process skin deposits from your users."
+---
+
+# Deposits
+
+A deposit is when a user sells their skin to your platform. The user sends their item via a Steam trade offer, and you receive the value as balance.
+
+## The Deposit Flow
+
+<Steps>
+  <Step title="Fetch inventory">
+    Call `GET /client/inventory` to get the user's tradeable items with current offer prices.
+  </Step>
+  <Step title="User selects items">
+    Display the inventory in your UI. The user picks one or more items to sell.
+  </Step>
+  <Step title="Initiate deposit">
+    Call `POST /client/trading/deposit` with the selected items, their offer prices, and references.
+  </Step>
+  <Step title="Trade offer sent">
+    AssetPay automatically sends a Steam trade offer to the user. The trade moves to `PENDING`.
+  </Step>
+  <Step title="User accepts">
+    The user accepts the trade offer in Steam. The trade moves to `ACTIVE`, then `HOLD`.
+  </Step>
+  <Step title="Hold period (CS2 only)">
+    For CS2, Steam enforces a 7-day trade protection period. The trade stays in `HOLD` until it ends. Rust trades skip this step entirely and go straight to `COMPLETED`.
+  </Step>
+  <Step title="Completed">
+    After the hold period (CS2) or immediately after acceptance (Rust), the trade reaches `COMPLETED`. You receive a callback and credit the user's balance.
+  </Step>
+</Steps>
+
+## Single-Item Deposit
+
+```http
+POST https://api.assetpay.co/client/trading/deposit
+Content-Type: application/json
+Authorization: CLIENT_TOKEN
+
+{
+  "items": [
+    {
+      "itemId": "a1b2c3d4-...",
+      "offer": {
+        "price": 10.75,
+        "reference": "ref_abc123"
+      }
+    }
+  ],
+  "game": "730",
+  "externalId": "dep_unique_123"
+}
+```
+
+## Multi-Item Deposit
+
+You can deposit multiple items in a single trade. Pass them all in the `items` array:
+
+```http
+POST https://api.assetpay.co/client/trading/deposit
+Content-Type: application/json
+Authorization: CLIENT_TOKEN
+
+{
+  "items": [
+    {
+      "itemId": "a1b2c3d4-...",
+      "offer": {
+        "price": 10.75,
+        "reference": "ref_abc123"
+      }
+    },
+    {
+      "itemId": "b2c3d4e5-...",
+      "offer": {
+        "price": 5.20,
+        "reference": "ref_def456"
+      }
+    }
+  ],
+  "game": "730",
+  "externalId": "dep_multi_456"
+}
+```
+
+For Rust items that are stackable, you can specify an `amount`:
+
+```json
+{
+  "itemId": "...",
+  "offer": {
+    "price": 0.15,
+    "reference": "ref_rust_789"
+  },
+  "amount": 3
+}
+```
+
+## Request Fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `items` | array | Yes | Array of items to deposit (min 1) |
+| `items[].itemId` | string | Yes | Item ID from the inventory response |
+| `items[].offer` | object | No | Offer price and reference. If omitted, the item sells at the current best offer. |
+| `items[].offer.price` | number | Yes* | The offer price in USD (*required if offer is provided) |
+| `items[].offer.reference` | string | Yes* | The offer reference from inventory (*required if offer is provided) |
+| `items[].amount` | number | No | Quantity for stackable items (default: 1) |
+| `game` | string | No | `"730"` (CS2) or `"252490"` (Rust). Defaults to `"730"`. |
+| `externalId` | string | No | Your unique tracking ID (max 128 chars). Stored as `externalId` on the trade. |
+| `isInstant` | boolean | No | Whether to request instant credit (default: `true`). |
+
+## Response
+
+The response contains the full trade object:
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": {
+    "id": "trade-uuid",
+    "type": "DEPOSIT",
+    "status": "INITIATED",
+    "game": "730",
+    "externalId": "dep_unique_123",
+    "merchantId": "merchant-uuid",
+    "clientUserId": "client-uuid",
+    "clientSteamID": "76561198012345678",
+    "clientTradeUrl": "https://steamcommunity.com/tradeoffer/new/?partner=...",
+    "items": [...],
+    "totalPrice": 10.75,
+    "isInstant": true,
+    "createdAt": "2026-03-04T10:00:00.000Z",
+    "updatedAt": "2026-03-04T10:00:00.000Z"
+  }
+}
+```
+
+## Instant Deposits
+
+By default, `isInstant` is `true`. When enabled, AssetPay calculates how much of the deposit value can be credited instantly based on collateral, rather than waiting for the full 7-day hold period.
+
+When a deposit enters `HOLD` status, the trade object includes:
+
+- `preCredit` - the amount credited instantly (USD)
+- `pendingCredit` - the remaining amount held until the hold period ends
+- `collateral` - breakdown of collateral sources
+
+If `isInstant` is set to `false`, the entire amount waits until `COMPLETED`.
+
+The `collateral` field in the inventory response tells you the total instant credit available for that user before they start depositing.
+
+## External ID
+
+The `externalId` field is your own tracking identifier. Use it to link AssetPay trades back to records in your system.
+
+<Warning>
+External IDs must be unique per trade. Reusing an ID will result in an `EXTERNAL_ID_EXISTS` error.
+</Warning>
+
+## Balance Handling for Deposits
+
+**When to credit:**
+
+| Event | Action |
+|-------|--------|
+| `HOLD` | Credit `preCredit` amount (if using instant deposits) |
+| `COMPLETED` | Credit `pendingCredit` (the remaining held amount) |
+| `REVERTED` | Reverse any instant credit that was applied |
+
+**When NOT to credit:**
+
+| Event | Action |
+|-------|--------|
+| `INITIATED` | Just acknowledge |
+| `PENDING` | Just acknowledge |
+| `ACTIVE` | Just acknowledge |
+| `FAILED` | No credit needed |
+
+See the [Callbacks](/guides/callbacks) guide for full details on processing each event.

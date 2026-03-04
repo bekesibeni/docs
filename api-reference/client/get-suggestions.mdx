@@ -1,0 +1,44 @@
+---
+title: "Get Search Suggestions"
+description: "Autocomplete suggestions for market item search."
+---
+
+# GET /client/market/suggestions
+
+Returns lightweight search suggestions for building autocomplete in your market UI. Faster than a full market search.
+
+**Authentication:** Client Token (`Authorization` header)
+
+## Request
+
+```http
+GET https://api.assetpay.co/client/market/suggestions?q=dragon
+Authorization: CLIENT_TOKEN
+```
+
+### Query Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `q` | string | Yes | Search query (1-100 characters) |
+
+## Response
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": [
+    "AWP | Dragon Lore (Factory New)",
+    "AWP | Dragon Lore (Minimal Wear)",
+    "AWP | Dragon Lore (Field-Tested)"
+  ]
+}
+```
+
+## Rate Limits
+
+| Merchant Status | Limit |
+|----------------|-------|
+| Verified | 2,000 requests / min |
+| Unverified | 20 requests / min |

@@ -1,0 +1,89 @@
+---
+title: "Get Market Items"
+description: "Browse items available for withdrawal."
+---
+
+# GET /client/market
+
+Returns items currently available on the market for purchase (withdrawal). Supports search, filtering, sorting, and pagination.
+
+**Authentication:** Client Token (`Authorization` header)
+
+## Request
+
+```http
+GET https://api.assetpay.co/client/market?game=730&search=awp&sort=price_asc&page=1&perPage=50
+Authorization: CLIENT_TOKEN
+```
+
+### Query Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `game` | string | `730` | `"730"` (CS2) or `"252490"` (Rust) |
+| `search` | string | - | Search by item name |
+| `sort` | string | - | `"popularity"`, `"price_asc"`, or `"price_desc"` |
+| `minPrice` | number | - | Minimum price filter (USD) |
+| `maxPrice` | number | - | Maximum price filter (USD) |
+| `page` | number | `1` | Page number |
+| `perPage` | number | `50` | Items per page (`-1` for all items, max `1000`) |
+
+## Response
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "e5f6g7h8-...",
+        "name": "AWP | Asiimov",
+        "marketHashName": "AWP | Asiimov (Field-Tested)",
+        "type": "Sniper Rifle",
+        "iconUrl": "IzMF03bk9WpSBq-S-ekoE33L-iLqGFHVaU25ZzQNQcXdEHOQ6UFc5FT_0NqFMOBBN-s...",
+        "appid": 730,
+        "contextid": 2,
+        "tradable": true,
+        "marketPrice": 48.00,
+        "offer": {
+          "price": 45.00,
+          "reference": "ref_market_456",
+          "delivery": "normal"
+        },
+        "exterior": "Field-Tested",
+        "wear": "0.28123",
+        "rarity": "Covert",
+        "color": "#EB4B4B",
+        "paintSeed": 42,
+        "stickers": [],
+        "market": 1
+      }
+    ],
+    "count": 1523
+  }
+}
+```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `items` | [InventoryItem](/reference/types#inventoryitem)[] | Available market items |
+| `count` | number | Total matching items (for pagination) |
+
+### Key Item Fields for Withdrawals
+
+| Field | Description |
+|-------|-------------|
+| `offer.price` | Purchase cost in USD |
+| `offer.reference` | Must be passed in the withdrawal request |
+| `offer.delivery` | `"normal"` or `"auto"` delivery mode |
+| `market` | Marketplace source number (pass this in the withdrawal request) |
+
+## Rate Limits
+
+| Merchant Status | Limit |
+|----------------|-------|
+| Verified | 2,000 requests / min |
+| Unverified | 20 requests / min |

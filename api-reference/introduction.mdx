@@ -1,33 +1,118 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+title: "API Overview"
+description: "Base URL, authentication, response format, and rate limits."
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
+# API Overview
 
-## Welcome
+## Base URL
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
+All requests go to:
 
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+```
+https://api.assetpay.co
+```
+
+Staging environment:
+
+```
+https://staging-api.assetpay.co
+```
 
 ## Authentication
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+There are two authentication methods depending on the endpoint:
+
+### API Key (Merchant endpoints)
+
+Used for `/auth/authenticate-client` and `/secure/*` endpoints. Pass your key in the `api-key` header:
+
+```
+api-key: ap_your_key_here
+```
+
+### Client Token (Client endpoints)
+
+Used for `/client/*` endpoints. Pass the JWT in the `Authorization` header:
+
+```
+Authorization: eyJhbGciOiJIUzI1NiIs...
+```
+
+See the [Authentication guide](/guides/authentication) for how to generate client tokens.
+
+## Response Format
+
+All responses follow the same envelope:
+
+### Success
 
 ```json
-"security": [
-  {
-    "bearerAuth": []
+{
+  "requestId": "550e8400-e29b-41d4-a716-446655440000",
+  "success": true,
+  "data": {
+    // endpoint-specific response
   }
-]
+}
 ```
+
+### Error
+
+```json
+{
+  "requestId": "550e8400-e29b-41d4-a716-446655440000",
+  "success": false,
+  "error": {
+    "code": 1001,
+    "key": "VALIDATION_FAILED",
+    "message": "Invalid request data"
+  }
+}
+```
+
+The `requestId` is a UUID generated for each request. Include it when contacting support about specific errors.
+
+## Rate Limits
+
+Rate limits vary by endpoint and merchant verification status:
+
+| Endpoint Group | Verified | Unverified |
+|---------------|----------|------------|
+| Client authentication | 1,000,000/hour | 100/hour |
+| Inventory | 1,000/min | 10/min |
+| Market | 2,000/min | 20/min |
+| Deposit/Withdraw | 500/min | 5/min |
+| Trade history | 3,000/min | 30/min |
+| Trade URL check | 100,000/hour | 100/hour |
+| Prices | 1,000/hour | 100/hour |
+
+Rate limits are shared across all clients of the same merchant. If you have 100 users hitting the inventory endpoint, they all share the same 1,000/min bucket.
+
+When you hit a rate limit, you'll receive a `429` response with error code `1007` (`RATE_LIMITED`).
+
+## Versioning
+
+The API uses URI-based versioning. Client and secure endpoints are version-neutral (no version prefix needed). Call them directly:
+
+```
+POST /auth/authenticate-client
+GET  /client/inventory
+POST /client/trading/deposit
+POST /secure/check-tradeurl
+```
+
+## Prices
+
+All prices in the API are in **USD (dollars)**, not cents. For example, `10.75` means \$10.75.
+
+## Game Parameter
+
+Most endpoints accept a `game` parameter:
+
+| Value | Game |
+|-------|------|
+| `730` | Counter-Strike 2 |
+| `252490` | Rust |
+
+If omitted, defaults to `730` (CS2).

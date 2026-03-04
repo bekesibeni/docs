@@ -1,0 +1,152 @@
+---
+title: "Trade Lifecycle"
+description: "How trades progress through different statuses and what each status means."
+---
+
+# Trade Lifecycle
+
+Every trade follows a state machine. Understanding the status transitions is critical for correctly handling callbacks and updating your users.
+
+## Trade Statuses
+
+| Status | Description |
+|--------|-------------|
+| `INITIATED` | Trade created, processing hasn't started yet |
+| `PENDING` | Steam trade offer has been sent, waiting for user to accept |
+| `ACTIVE` | Trade offer accepted, item transfer in progress |
+| `ESCROW` | Steam 2FA escrow period active (user doesn't have mobile authenticator set up for 7+ days) |
+| `HOLD` | 7-day trade hold period (Steam's reversal protection) |
+| `COMPLETED` | Trade finished successfully |
+| `FAILED` | Trade failed at some point in the process |
+| `REVERTED` | A previously active/held trade was reversed |
+| `PARTIAL` | Some items in a multi-item trade succeeded, others didn't |
+
+## Deposit Status Flow
+
+```
+INITIATED
+    │
+    ▼
+PENDING ──────────► FAILED
+    │                  ▲
+    ▼                  │
+ACTIVE ───────────────┤
+    │                  │
+    ├──► ESCROW ──────┤
+    │       │          │
+    ▼       ▼          │
+  HOLD ───────────────┤
+    │                  │
+    ▼                  │
+COMPLETED             │
+    │                  │
+    └──► REVERTED ◄───┘
+```
+
+### What triggers each transition:
+
+- **INITIATED → PENDING**: Steam trade offer sent to the user
+- **PENDING → ACTIVE**: User accepted the trade offer in Steam
+- **PENDING → FAILED**: Trade offer expired, was declined, or the user's account has restrictions
+- **ACTIVE → HOLD**: Item received, 7-day hold period started
+- **ACTIVE → ESCROW**: User's Steam account requires escrow (no mobile authenticator)
+- **ESCROW → HOLD**: Escrow period ended, entering normal hold
+- **ESCROW → FAILED**: Escrow period timed out
+- **HOLD → COMPLETED**: 7-day hold ended, no reversal detected
+- **HOLD → REVERTED**: Steam trade was reversed during the hold period
+- **Any → FAILED**: Various error conditions (timeout, system error, etc.)
+
+## Withdrawal Status Flow
+
+```
+INITIATED
+    │
+    ▼
+ACTIVE ──────────► FAILED
+    │                 ▲
+    ▼                 │
+  HOLD ──────────────┤
+    │                 │
+    ▼                 │
+COMPLETED            │
+    │                 │
+    └──► REVERTED ◄──┘
+```
+
+### What triggers each transition:
+
+- **INITIATED → ACTIVE**: Merchant approved via callback, item purchased from supplier
+- **INITIATED → FAILED**: Merchant rejected via callback, or purchase failed
+- **ACTIVE → HOLD**: Item purchased, trade offer sent to user
+- **ACTIVE → FAILED**: Purchase from supplier failed
+- **HOLD → COMPLETED**: User accepted the trade offer, hold period ended
+- **HOLD → REVERTED**: Trade was reversed (by supplier or user)
+
+## The 7-Day Hold
+
+Steam enforces a 7-day reversal window on all trades. During this window, items can be clawed back. This affects how you should handle balance credits.
+
+The `holdEndDate` field on the trade object tells you exactly when the hold expires.
+
+**Without instant deposits:**
+
+Don't credit any balance until `COMPLETED`. Simple and safe.
+
+**With instant deposits (recommended):**
+
+When a deposit enters `HOLD`, the trade includes:
+- `preCredit`: amount to credit immediately (calculated from collateral)
+- `pendingCredit`: remaining amount to credit after the hold
+
+Credit `preCredit` on `HOLD`, then credit `pendingCredit` on `COMPLETED`. If the trade gets `REVERTED`, reverse the `preCredit`.
+
+## Terminal States
+
+These statuses are final and won't change:
+
+- **`COMPLETED`**: The trade is done. Balance has been settled.
+- **`FAILED`**: The trade didn't go through. For withdrawals, refund the user.
+- **`REVERTED`**: The trade was reversed after being active. Check `revertedBy` to understand who initiated it.
+
+## The `revertedBy` Field
+
+When a trade reaches `REVERTED`, the `revertedBy` field tells you who caused it:
+
+| Value | Meaning |
+|-------|---------|
+| `SUPPLIER` | The marketplace supplier reversed the trade |
+| `USER` | The end user reversed the trade |
+
+For deposits, reversals typically happen during the hold period when Steam reverses the trade. For withdrawals, either party can reverse after acceptance.
+
+## Bot Info
+
+During certain stages, the trade object includes `botInfo` with details about the Steam bot handling the trade:
+
+```json
+{
+  "botInfo": {
+    "name": "AssetPay Bot #3",
+    "avatar": "https://...",
+    "steamId": "76561198...",
+    "joined": "2024-01-15T00:00:00.000Z"
+  }
+}
+```
+
+You can show this in your UI so users know which bot to expect the trade offer from.
+
+## Recommended UI Mapping
+
+You probably don't want to expose all internal statuses to your users. Here's a suggested mapping:
+
+| Internal Status | User-facing Label | Description to Show |
+|----------------|------------------|---------------------|
+| `INITIATED`, `PENDING` | Processing | Your trade is being set up |
+| `ACTIVE` | In Progress | Trade offer sent, waiting for action |
+| `ESCROW` | Escrow Hold | Waiting for Steam escrow to clear |
+| `HOLD` | Held (7 days) | Item held for Steam's protection period |
+| `COMPLETED` | Completed | Trade finished |
+| `FAILED` | Failed | Trade didn't go through |
+| `REVERTED` | Reversed | Trade was reversed |
+| `PARTIAL` | Partially Completed | Some items were traded |

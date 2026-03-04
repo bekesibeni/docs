@@ -1,97 +1,88 @@
 ---
 title: "Introduction"
-description: "Welcome to the new home for your documentation"
+description: "AssetPay API documentation for merchants integrating CS2 and Rust skin trading."
 ---
 
-## Setting up
+# AssetPay Merchant API
 
-Get your documentation site up and running in minutes.
+AssetPay is a B2B payment gateway for CS2 and Rust in-game item trading. Merchants integrate our API to let their users deposit (sell) and withdraw (buy) skins directly on their platform.
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+This documentation covers the direct API integration, which gives you full control over the trading experience on your site.
 
-## Make it yours
+## Why Direct API?
 
-Design a docs site that looks great and empowers your users.
+You could use our Web Component for a faster setup, but most merchants get better results with a direct integration:
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+- Your users stay in your UI the entire time. No popups, no redirects.
+- You control the flow, the styling, and the error handling.
+- Deposit and withdrawal conversion improves when the experience feels native to your platform.
+
+The tradeoff is more development work upfront. This documentation walks you through every step.
+
+## What You Can Do
+
+<CardGroup cols={2}>
+  <Card title="Deposit Skins" icon="arrow-down-to-line">
+    Users sell their CS2 or Rust skins to your platform. You receive the item value as balance.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Withdraw Skins" icon="arrow-up-from-line">
+    Users buy skins from the market using their balance on your platform.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Real-time Updates" icon="bolt">
+    WebSocket events and webhook callbacks keep your system in sync with trade state changes.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Multi-Game Support" icon="gamepad">
+    CS2 and Rust are both supported with game-specific pricing and inventory.
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## Supported Games
 
-Everything you need to create world-class documentation.
+| Game | App ID | Deposit | Withdrawal |
+|------|--------|---------|------------|
+| Counter-Strike 2 | `730` | Yes | Yes |
+| Rust | `252490` | Yes | Yes |
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+All game parameters default to CS2 (`730`) if omitted.
 
-## Need inspiration?
+## How It Works
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<Steps>
+  <Step title="Authenticate the user">
+    Your backend calls AssetPay with the user's Steam ID and trade URL. We return a client token that can be used from your frontend or backend.
+  </Step>
+  <Step title="Fetch inventory or market">
+    Show the user their Steam inventory (for deposits) or the available market items (for withdrawals). Both endpoints return live pricing.
+  </Step>
+  <Step title="Initiate a trade">
+    When the user picks items, a deposit or withdrawal request is sent to AssetPay. For withdrawals, we call your backend first to approve the purchase before anything gets bought.
+  </Step>
+  <Step title="Handle callbacks">
+    As the trade progresses, we send webhook callbacks to your server. You credit balances on completed deposits and handle approvals for withdrawals.
+  </Step>
+</Steps>
+
+## Steam 7-Day Trade Hold
+
+<Warning>
+Steam enforces a 7-day trade reversal period on all trades. Deposits go through a `HOLD` status for 7 days before reaching `COMPLETED`. Do not credit user balances until the trade hits `COMPLETED` (unless you use instant deposits with collateral).
+</Warning>
+
+Read more in the [Trade Lifecycle](/guides/trade-lifecycle) guide.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get your first trade working in minutes.
+  </Card>
+  <Card title="Authentication" icon="key" href="/guides/authentication">
+    How client tokens work and how to generate them.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/introduction">
+    Full endpoint documentation with request and response examples.
+  </Card>
+  <Card title="Types Reference" icon="brackets-curly" href="/reference/types">
+    All TypeScript interfaces and enums used in the API.
+  </Card>
+</CardGroup>

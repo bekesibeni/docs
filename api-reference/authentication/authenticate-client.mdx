@@ -1,0 +1,112 @@
+---
+title: "Authenticate Client"
+description: "Generate a client token for a Steam user."
+---
+
+# POST /auth/authenticate-client
+
+Creates a JWT token for a Steam user, allowing them to access client endpoints (inventory, market, trading).
+
+**Authentication:** API Key (`api-key` header, requires `CORE_ACCESS` scope)
+
+## Request
+
+```http
+POST https://api.assetpay.co/auth/authenticate-client
+Content-Type: application/json
+api-key: YOUR_API_KEY
+
+{
+  "clientSteamId": "76561198012345678",
+  "clientTradeUrl": "https://steamcommunity.com/tradeoffer/new/?partner=12345678&token=AbCdEfGh",
+  "clientId": "user-123",
+  "clientData": {
+    "totalWager": 5000,
+    "kycLevel": 2,
+    "fiatDeposits": true,
+    "cryptoDeposits": false
+  }
+}
+```
+
+### Body Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `clientSteamId` | string | Yes | Steam ID 64 (must match `76561XXXXXXXXXXXX` format, 17 digits) |
+| `clientTradeUrl` | string | Yes | Steam trade offer URL |
+| `clientId` | string | No | Your own user identifier (max 128 chars). Stored on every trade as `externalClientUserId`. |
+| `clientData` | object | No | User context for collateral calculations. See `clientData` fields below. |
+
+### clientData Fields
+
+These fields feed into the risk model that determines instant deposit collateral. All are optional and default to `0`/`false` if omitted.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `totalWager` | number | Total USD amount the user has wagered on your platform. Higher values increase external trust score. |
+| `kycLevel` | number | User's KYC verification level on your platform (0-3). Level 3 unlocks higher collateral thresholds. |
+| `fiatDeposits` | boolean | User has made fiat deposits on your platform. |
+| `cryptoDeposits` | boolean | User has made crypto deposits on your platform. |
+
+Having both `fiatDeposits` and `cryptoDeposits` as `true` combined with `kycLevel: 3` gives the highest collateral multiplier. The `clientData` is updated on every authentication call, so pass current values each time.
+
+## Response
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInVzZXJJZCI6Im1lcmNoYW50LXV1aWQifQ..."
+  }
+}
+```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `token` | string | JWT signed with your API secret (HS256). Valid for 24 hours. |
+
+## Token Structure
+
+The generated JWT contains:
+
+**Header:**
+```json
+{
+  "alg": "HS256",
+  "userId": "your-merchant-id"
+}
+```
+
+**Payload:**
+```json
+{
+  "client": {
+    "steamID": "76561198012345678",
+    "tradeUrl": "https://steamcommunity.com/tradeoffer/new/?partner=...",
+    "clientId": "user-123",
+    "clientData": { "totalWager": 5000, "kycLevel": 2, "fiatDeposits": true, "cryptoDeposits": false }
+  },
+  "iat": 1709550000,
+  "exp": 1741086000
+}
+```
+
+## Rate Limits
+
+| Merchant Status | Limit |
+|----------------|-------|
+| Verified | 1,000,000 requests / hour |
+| Unverified | 100 requests / hour |
+
+## Errors
+
+| Code | Key | When |
+|------|-----|------|
+| 1001 | `VALIDATION_FAILED` | Invalid Steam ID format, missing trade URL, etc. |
+| 1400 | `MISSING_API_KEY` | No `api-key` header provided |
+| 1401 | `INVALID_API_KEY` | API key not found or invalid |
+| 1403 | `API_KEY_SCOPE_DENIED` | Key doesn't have `CORE_ACCESS` scope |

@@ -1,0 +1,227 @@
+---
+title: "Callbacks"
+description: "Receiving and processing webhook callbacks from AssetPay."
+---
+
+# Callbacks
+
+AssetPay sends HTTP POST requests to your callback URL whenever a trade changes state. These webhooks are your primary mechanism for tracking trade progress and updating user balances.
+
+## Setup
+
+Configure your callback URL in the AssetPay dashboard under Settings. You also need an API secret, which is used for HMAC signature verification.
+
+Your callback endpoint must:
+- Accept POST requests with JSON body
+- Respond with HTTP 200 within 15 seconds
+- Be publicly accessible (no auth required from our side)
+
+## Callback Payload
+
+Every callback has this structure:
+
+```json
+{
+  "payload": {
+    "trade": {
+      "id": "trade-uuid",
+      "type": "DEPOSIT",
+      "status": "COMPLETED",
+      "game": "730",
+      "externalId": "your-tracking-id",
+      "merchantId": "merchant-uuid",
+      "clientUserId": "client-uuid",
+      "clientSteamID": "76561198012345678",
+      "clientTradeUrl": "https://steamcommunity.com/tradeoffer/new/?partner=...",
+      "items": [...],
+      "totalPrice": 10.75,
+      "preCredit": 8.60,
+      "pendingCredit": 2.15,
+      "isInstant": true,
+      "holdEndDate": "2026-03-11T10:00:00.000Z",
+      "createdAt": "2026-03-04T10:00:00.000Z",
+      "updatedAt": "2026-03-11T10:00:00.000Z"
+    },
+    "event": "COMPLETED",
+    "timestamp": "2026-03-11T10:00:00.000Z",
+    "key": "a1b2c3d4e5f6..."
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `payload.trade` | Full [ITrade](/reference/types#itrade) object with current state |
+| `payload.event` | The event that triggered this callback (matches the trade's current status) |
+| `payload.timestamp` | ISO 8601 timestamp of when the callback was generated |
+| `payload.key` | HMAC-SHA256 signature for verification |
+
+## Signature Verification
+
+Always verify the signature before processing a callback. The signature is computed over the `trade` object using your API secret.
+
+The signing algorithm uses **canonical JSON** (keys sorted recursively, no whitespace) as the HMAC message:
+
+```typescript
+import { createHmac } from 'crypto';
+
+function canonicalize(value: unknown): string {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) return '[' + value.map(canonicalize).join(',') + ']';
+  const keys = Object.keys(value as Record<string, unknown>).sort();
+  return '{' + keys.map(k =>
+    JSON.stringify(k) + ':' + canonicalize((value as Record<string, unknown>)[k])
+  ).join(',') + '}';
+}
+
+function verifySignature(trade: any, signature: string, secret: string): boolean {
+  const expected = createHmac('sha256', secret)
+    .update(canonicalize(trade))
+    .digest('hex');
+
+  // Use timing-safe comparison to prevent timing attacks
+  const a = Buffer.from(expected);
+  const b = Buffer.from(signature);
+  if (a.length !== b.length) return false;
+  return require('crypto').timingSafeEqual(a, b);
+}
+
+// Usage in your callback handler:
+const { trade, key } = req.body.payload;
+if (!verifySignature(trade, key, YOUR_API_SECRET)) {
+  return res.status(401).send('Invalid signature');
+}
+```
+
+<Warning>
+The signature is computed over the `trade` object specifically, not the entire payload. Make sure you pass `payload.trade` (not the whole `payload`) to your verification function.
+</Warning>
+
+## Handling Events
+
+### Deposit Callbacks
+
+| Event | What to Do |
+|-------|-----------|
+| `INITIATED` | Acknowledge with `200`. No balance action. |
+| `PENDING` | Trade offer sent. Acknowledge with `200`. |
+| `ACTIVE` | User accepted. Acknowledge with `200`. |
+| `HOLD` | Credit `preCredit` if using instant deposits. Otherwise just acknowledge. |
+| `COMPLETED` | Credit `pendingCredit` (or `totalPrice` if not using instant deposits). |
+| `FAILED` | No credit needed. Optionally notify the user. |
+| `REVERTED` | Reverse any `preCredit` that was already credited. |
+| `ESCROW` | Acknowledge. Steam escrow in effect. |
+
+### Withdrawal Callbacks
+
+| Event | What to Do |
+|-------|-----------|
+| `INITIATED` | **This is the approval gate.** Check the user's balance, deduct it, and respond `200` to approve. Or respond with `4xx` to reject (see below). Nothing gets purchased until you approve. |
+| `ACTIVE` | Item purchased from supplier. Acknowledge with `200`. |
+| `HOLD` | Item being delivered. Acknowledge with `200`. |
+| `COMPLETED` | Delivery complete. No action needed. |
+| `FAILED` | Refund `totalPrice` to the user's balance. |
+| `REVERTED` | Refund `totalPrice` to the user. Check `revertedBy`. |
+
+### The INITIATED Callback for Withdrawals
+
+This is the most important callback in the withdrawal flow. When a user initiates a withdrawal, AssetPay sends you this callback **before purchasing anything**. Your backend is the gatekeeper.
+
+Your handler should:
+1. Verify the signature
+2. Look up the user by `trade.clientSteamID` or `trade.externalClientUserId`
+3. Check if they can afford `trade.totalPrice`
+4. If yes: deduct the balance and respond with `200`
+5. If no: respond with a rejection
+
+### Rejecting a Withdrawal
+
+Respond with any `4xx` status code. `402` (Payment Required) is the recommended choice for balance-related rejections:
+
+```json
+HTTP/1.1 402 Payment Required
+Content-Type: application/json
+
+{ "reason": "Insufficient balance" }
+```
+
+Any `4xx` status works (400, 402, 403, 409, etc.). The `reason` field is optional but recommended -- it appears in AssetPay logs for debugging.
+
+The trade will be marked `FAILED` and your merchant wallet balance is refunded automatically. You'll receive a follow-up `FAILED` callback.
+
+**Legacy format (still supported):** You can also respond with `200` and a rejection body:
+
+```json
+{ "action": "reject" }
+```
+
+<Note>
+Only `4xx` responses are treated as intentional rejections. `5xx` responses and timeouts are treated as delivery failures and retried up to 10 times.
+</Note>
+
+## Idempotency
+
+You may receive the same callback more than once (network retries, duplicate deliveries). Your handler should be idempotent. Track processed trade events in your database and skip duplicates:
+
+```typescript
+app.post('/assetpay/callback', async (req, res) => {
+  const { trade, event, key } = req.body.payload;
+
+  if (!verifySignature(trade, key, API_SECRET)) {
+    return res.status(401).send('Invalid signature');
+  }
+
+  // Check if we already processed this event for this trade
+  const processed = await db.processedCallbacks.findOne({
+    tradeId: trade.id,
+    event: event
+  });
+
+  if (processed) {
+    return res.status(200).send('Already processed');
+  }
+
+  // Process the event
+  switch (trade.type) {
+    case 'DEPOSIT':
+      await handleDepositEvent(trade, event);
+      break;
+    case 'WITHDRAW':
+      await handleWithdrawalEvent(trade, event);
+      break;
+  }
+
+  // Mark as processed
+  await db.processedCallbacks.create({
+    tradeId: trade.id,
+    event: event,
+    processedAt: new Date()
+  });
+
+  res.status(200).send('OK');
+});
+```
+
+## Retry Behavior
+
+If your endpoint returns a `5xx` status, times out, or doesn't respond within 15 seconds, AssetPay retries the callback:
+
+- **Max retries**: 10
+- **Backoff**: Exponential, starting at 30 seconds
+- **Schedule**: ~30s, ~1m, ~2m, ~4m, ~8m, ~16m, ~32m, ~1h, ~2h, ~4h
+
+Failed callbacks are kept indefinitely for debugging. You can view callback history and manually resend failed callbacks from the AssetPay dashboard.
+
+## Callback Example: Complete Deposit Flow
+
+Here's the sequence of callbacks you'd receive for a typical deposit:
+
+```
+1. INITIATED  →  Trade created, offer about to be sent
+2. PENDING    →  Steam trade offer sent to user
+3. ACTIVE     →  User accepted the offer
+4. HOLD       →  7-day hold started (credit preCredit here)
+5. COMPLETED  →  Hold ended, no reversal (credit pendingCredit here)
+```
+
+If something goes wrong at any step, you'll get a `FAILED` callback instead of the next step. If a reversal happens during `HOLD`, you'll get `REVERTED`.

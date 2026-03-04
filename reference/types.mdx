@@ -1,0 +1,213 @@
+---
+title: "Types Reference"
+description: "TypeScript interfaces and enums used throughout the AssetPay API."
+---
+
+# Types Reference
+
+All TypeScript types used in API responses. These are the shapes you'll work with when parsing responses and processing callbacks.
+
+## ITrade
+
+The main trade object returned by deposit/withdraw endpoints, trade history, and callbacks.
+
+```typescript
+interface ITrade {
+  id: string;                    // Unique trade ID (UUID)
+  type: TradeType;               // "DEPOSIT" or "WITHDRAW"
+  status: TradeStatus;           // Current trade status
+  game: string;                  // Game app ID ("730" or "252490")
+
+  // Participants
+  merchantId: string;            // Your merchant ID
+  clientUserId: string;          // Internal client user ID
+  clientSteamID: string;         // User's Steam ID 64
+  clientTradeUrl: string;        // User's Steam trade URL
+
+  // Items and pricing
+  items: InventoryItem[];        // Items in this trade
+  totalPrice: number;            // Total value in USD
+
+  // Instant deposit fields (deposits only)
+  preCredit?: number;            // Amount credited instantly (USD)
+  pendingCredit?: number;        // Amount held until COMPLETED (USD)
+  isInstant?: boolean;           // Whether instant credit was requested
+  collateral?: {
+    merchant: number;            // Merchant collateral portion
+    provider: number;            // Provider collateral portion
+  };
+
+  // Tracking
+  externalId?: string;           // Your tracking ID (from externalId param)
+  externalClientUserId?: string; // Your user ID (from clientId param)
+  offerID?: string;              // Steam trade offer ID
+
+  // Timing
+  holdEndDate?: Date;            // When the 7-day hold expires
+  readyAt?: Date;                // When the trade became ready
+  createdAt: Date;
+  updatedAt: Date;
+
+  // Status-specific
+  revertedBy?: RevertedBy;       // Who reversed the trade (if REVERTED)
+  error?: string;                // Error message (if FAILED)
+
+  // Bot details
+  botInfo?: {
+    name: string;
+    avatar?: string;
+    steamId?: string;
+    joined?: Date;
+  };
+}
+```
+
+## InventoryItem
+
+Represents a skin item in inventory, market, or trade responses. Some fields are only present in certain contexts.
+
+```typescript
+interface InventoryItem {
+  // Identity
+  id: string;                    // Encoded item ID
+  appid: number;                 // Game app ID (730 or 252490)
+  contextid: number;             // Steam context ID (always 2)
+
+  // Description
+  name: string;                  // Display name (e.g. "AK-47 | Redline")
+  marketHashName: string;        // Full market name (e.g. "AK-47 | Redline (Field-Tested)")
+  type: string;                  // Item type (e.g. "Rifle", "Knife")
+  iconUrl: string;               // Steam image hash (use with Steam CDN base URL)
+
+  // Trade state
+  tradable: boolean;             // Whether the item can be traded
+  accepted?: boolean;            // Whether the item is accepted for deposit (inventory only)
+  amount?: number;               // Stack count for Rust items
+
+  // Pricing
+  marketPrice?: number;          // BUFF163 market reference price (USD)
+  offer?: {
+    price: number;               // Actual offer price (USD)
+    reference: string;           // Offer reference (pass back in deposit/withdraw)
+    delivery?: string;           // "normal" or "auto" (market items only)
+    maxAmount?: number;          // Max deposit quantity (inventory only)
+  };
+
+  // Cosmetic attributes
+  exterior?: string;             // "Factory New", "Minimal Wear", etc.
+  rarity?: string;               // "Consumer Grade", "Covert", etc.
+  color?: string;                // Rarity color hex (e.g. "#EB4B4B")
+  phase?: string;                // Doppler phase (if applicable)
+  wear?: string;                 // Float value as string
+  fade?: string;                 // Fade percentage (if applicable)
+  hardened?: string;             // Case Hardened pattern info
+  paintSeed?: number;            // Paint seed number
+
+  // Applied items
+  stickers?: Sticker[];          // Applied stickers
+  charm?: Charm;                 // Applied charm (CS2 only)
+
+  // Withdrawal-specific
+  market?: number;               // Marketplace source (pass in withdraw request)
+  purchaseStatus?: ItemPurchaseStatus;  // Per-item purchase progress
+}
+```
+
+## Sticker
+
+```typescript
+interface Sticker {
+  name: string;                  // Sticker name
+  slot: number;                  // Position on the weapon (0-4)
+  wear?: number;                 // Sticker wear (0 = perfect, 1 = scraped off)
+  iconUrl: string;               // Sticker image URL
+}
+```
+
+## Charm
+
+```typescript
+interface Charm {
+  name: string;                  // Charm name
+  pattern?: string;              // Pattern type
+  iconUrl: string;               // Charm image URL
+}
+```
+
+## Enums
+
+### TradeStatus
+
+```typescript
+enum TradeStatus {
+  INITIATED = 'INITIATED',      // Trade created, processing not started
+  PENDING   = 'PENDING',        // Steam trade offer sent
+  ACTIVE    = 'ACTIVE',         // Trade offer accepted, transfer in progress
+  ESCROW    = 'ESCROW',         // Steam 2FA escrow hold
+  HOLD      = 'HOLD',           // 7-day Steam hold period
+  COMPLETED = 'COMPLETED',      // Trade finished successfully
+  FAILED    = 'FAILED',         // Trade failed
+  REVERTED  = 'REVERTED',       // Trade reversed after being active
+  PARTIAL   = 'PARTIAL',        // Some items succeeded, others didn't
+}
+```
+
+### TradeType
+
+```typescript
+enum TradeType {
+  DEPOSIT  = 'DEPOSIT',         // User selling items to merchant
+  WITHDRAW = 'WITHDRAW',        // User buying items from market
+}
+```
+
+### RevertedBy
+
+```typescript
+enum RevertedBy {
+  SUPPLIER = 'SUPPLIER',        // Marketplace supplier reversed
+  USER     = 'USER',            // End user reversed
+}
+```
+
+### ItemPurchaseStatus
+
+Per-item status for withdrawal trades:
+
+```typescript
+enum ItemPurchaseStatus {
+  INITIATED = 'INITIATED',
+  PENDING   = 'PENDING',
+  ACTIVE    = 'ACTIVE',
+  HOLD      = 'HOLD',
+  COMPLETED = 'COMPLETED',
+  FAILED    = 'FAILED',
+  REVERTED  = 'REVERTED',
+}
+```
+
+### Games
+
+```typescript
+enum Games {
+  CS2  = '730',
+  RUST = '252490',
+}
+```
+
+## Callback Payload
+
+The structure sent to your callback URL:
+
+```typescript
+interface CallbackPayload {
+  payload: {
+    trade: ITrade;               // Full trade object
+    event: string;               // Event name (matches trade status)
+    timestamp: string;           // ISO 8601 timestamp
+    key: string;                 // HMAC-SHA256 signature
+  };
+}
+```
+
+The `key` is computed over the `trade` object using your API secret with canonical JSON serialization. See [Callbacks](/guides/callbacks) for verification code.

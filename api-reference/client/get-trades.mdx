@@ -1,0 +1,83 @@
+---
+title: "Get Trade History"
+description: "Fetch a user's trade history with filtering and pagination."
+---
+
+# GET /client/trades
+
+Returns the trade history for the authenticated client. Supports filtering by type and game, plus pagination.
+
+**Authentication:** Client Token (`Authorization` header)
+
+## Request
+
+```http
+GET https://api.assetpay.co/client/trades?type=DEPOSIT&game=730&page=1&limit=10
+Authorization: CLIENT_TOKEN
+```
+
+### Query Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `type` | string | - | Filter by `"DEPOSIT"` or `"WITHDRAW"` |
+| `game` | string | `730` | Game app ID |
+| `page` | number | `1` | Page number |
+| `limit` | number | `10` | Trades per page |
+
+## Response
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": {
+    "trades": [
+      {
+        "id": "trade-uuid",
+        "type": "DEPOSIT",
+        "status": "COMPLETED",
+        "game": "730",
+        "externalId": "dep_123",
+        "merchantId": "merchant-uuid",
+        "clientUserId": "client-uuid",
+        "clientSteamID": "76561198012345678",
+        "clientTradeUrl": "https://steamcommunity.com/tradeoffer/new/?partner=...",
+        "items": [
+          {
+            "id": "item-uuid",
+            "name": "AK-47 | Redline",
+            "marketHashName": "AK-47 | Redline (Field-Tested)",
+            "offer": {
+              "price": 10.75,
+              "reference": "ref_abc123"
+            }
+          }
+        ],
+        "totalPrice": 10.75,
+        "preCredit": 8.60,
+        "pendingCredit": 2.15,
+        "isInstant": true,
+        "holdEndDate": "2026-03-11T10:00:00.000Z",
+        "createdAt": "2026-03-04T10:00:00.000Z",
+        "updatedAt": "2026-03-11T10:00:00.000Z"
+      }
+    ],
+    "count": 156
+  }
+}
+```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `trades` | [ITrade](/reference/types#itrade)[] | Array of trade objects |
+| `count` | number | Total trades matching filters |
+
+## Rate Limits
+
+| Merchant Status | Limit |
+|----------------|-------|
+| Verified | 3,000 requests / min |
+| Unverified | 30 requests / min |

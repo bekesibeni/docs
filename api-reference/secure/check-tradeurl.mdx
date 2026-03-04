@@ -1,0 +1,81 @@
+---
+title: "Check Trade URL"
+description: "Validate a Steam trade URL before authenticating a user."
+---
+
+# POST /secure/check-tradeurl
+
+Validates a Steam trade URL and returns information about the account's trade eligibility. Use this before authenticating a client to catch invalid or restricted accounts early.
+
+**Authentication:** API Key (`api-key` header, requires `CORE_ACCESS` scope)
+
+## Request
+
+```http
+POST https://api.assetpay.co/secure/check-tradeurl
+Content-Type: application/json
+api-key: YOUR_API_KEY
+
+{
+  "tradeurl": "https://steamcommunity.com/tradeoffer/new/?partner=12345678&token=AbCdEfGh",
+  "forceRefresh": false
+}
+```
+
+### Body Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `tradeurl` | string | Yes | Steam trade URL to validate |
+| `forceRefresh` | boolean | No | Bypass cache and recheck (default: `false`) |
+
+## Response
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": {
+    "state": 1,
+    "steamid": "76561198012345678",
+    "message": "Trade URL is valid",
+    "canTrade": true
+  }
+}
+```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `state` | number | Trade URL state (see values below) |
+| `steamid` | string | Steam ID 64 (present when the URL resolves to a user) |
+| `message` | string | Human-readable status message |
+| `canTrade` | boolean | Whether the account can perform trades (present when state is 1-4) |
+| `reason` | object | Present only when `canTrade` is `false` |
+| `reason.escrowDays` | number | Steam escrow days (0 if mobile auth is set up) |
+| `reason.probation` | boolean | Whether the account is on probation |
+
+### State Values
+
+| Value | Name | Meaning |
+|-------|------|---------|
+| `1` | Normal | Trade URL is valid, full trading permissions |
+| `2` | CS2Banned | Can trade Rust items but not CS2 items |
+| `3` | RustBanned | Can trade CS2 items but not Rust items |
+| `4` | Banned | No trading permissions for any game |
+| `5` | InventoryPrivate | User's inventory is set to private |
+| `6` | TradeUrlInvalid | The trade URL format is invalid |
+| `7` | UserNotFound | No user found under this trade URL |
+| `8` | UnknownError | An unexpected error occurred |
+
+## Caching
+
+Results are cached for 1 hour. Use `forceRefresh: true` only when you need to recheck a specific URL, not on every call.
+
+## Rate Limits
+
+| Merchant Status | Limit |
+|----------------|-------|
+| Verified | 100,000 requests / hour |
+| Unverified | 100 requests / hour |

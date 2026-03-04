@@ -1,0 +1,102 @@
+---
+title: "WebSocket"
+description: "Real-time trade updates and price feeds via WebSocket."
+---
+
+# WebSocket
+
+AssetPay provides a Socket.IO WebSocket connection for real-time updates. Use it to push trade status changes and price updates to your frontend without polling.
+
+## Connecting
+
+Connect using Socket.IO with your API key or a client token:
+
+**With API key (merchant-level access):**
+```
+wss://api.assetpay.co/socket.io/?apiKey=YOUR_API_KEY&EIO=4&transport=websocket
+```
+
+**With client token (user-level access):**
+```
+wss://api.assetpay.co/socket.io/?token=CLIENT_TOKEN&EIO=4&transport=websocket
+```
+
+Both methods join the same merchant room and receive the same events. Use whichever is more convenient for your architecture.
+
+### Socket.IO Client Example
+
+```typescript
+import { io } from 'socket.io-client';
+
+const socket = io('wss://api.assetpay.co', {
+  transports: ['websocket'],
+  query: {
+    apiKey: 'YOUR_API_KEY'  // or token: 'CLIENT_TOKEN'
+  }
+});
+
+socket.on('connect', () => {
+  console.log('Connected to AssetPay');
+});
+
+socket.on('disconnect', () => {
+  console.log('Disconnected');
+});
+```
+
+## Events
+
+### Trade Updates
+
+Fired whenever a trade changes status. This is the most important event for keeping your UI in sync.
+
+```typescript
+socket.on('trade', (data) => {
+  const trade = data.trade;
+  console.log(`Trade ${trade.id} is now ${trade.status}`);
+  // Update your UI
+});
+```
+
+The `data.trade` object is the same [ITrade](/reference/types#itrade) shape you see in callbacks and API responses.
+
+Trade events are not game-specific. You'll receive updates for all games (CS2 and Rust) on the same connection.
+
+### Crypto Deposit Updates
+
+Fired when a merchant crypto deposit changes state:
+
+```typescript
+socket.on('deposit', (data) => {
+  console.log('Crypto deposit update:', data.funding);
+});
+```
+
+### Crypto Withdrawal Updates
+
+Fired when a merchant crypto withdrawal changes state:
+
+```typescript
+socket.on('withdrawal', (data) => {
+  console.log('Crypto withdrawal update:', data.funding);
+});
+```
+
+## WebSocket vs Callbacks
+
+Both WebSocket and callbacks deliver trade updates. They serve different purposes:
+
+| | WebSocket | Callbacks |
+|---|----------|-----------|
+| **Direction** | Push to your frontend/client | Push to your backend |
+| **Use for** | UI updates, real-time UX | Balance operations, business logic |
+| **Reliability** | Best-effort (can miss events on disconnect) | Guaranteed delivery with retries |
+| **State** | Stateful connection | Stateless HTTP POST |
+
+**Use both.** WebSocket for instant UI feedback, callbacks for the authoritative balance updates. Don't process balance changes based on WebSocket events alone.
+
+## Connection Notes
+
+- Only the `websocket` transport is supported (no HTTP long-polling fallback)
+- The connection authenticates once on connect. If your token expires, reconnect with a fresh one.
+- All events are scoped to your merchant account. You only see your own trades.

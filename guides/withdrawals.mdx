@@ -1,0 +1,174 @@
+---
+title: "Withdrawals"
+description: "How to process skin withdrawals for your users."
+---
+
+# Withdrawals
+
+A withdrawal is when a user buys a skin from the market using their balance on your platform. AssetPay purchases the item from a marketplace supplier and delivers it to the user via Steam trade offer.
+
+## The Withdrawal Flow
+
+<Steps>
+  <Step title="Fetch market">
+    Call `GET /client/market` to get available items with current prices.
+  </Step>
+  <Step title="User selects an item">
+    Display market items in your UI. The user picks what they want to buy.
+  </Step>
+  <Step title="Initiate withdrawal">
+    The user (or your backend) calls `POST /client/trading/withdraw` with the selected item details. The trade is created with `INITIATED` status.
+  </Step>
+  <Step title="AssetPay calls your backend (INITIATED callback)">
+    Before purchasing anything, AssetPay sends an `INITIATED` callback to your backend. This is where you check the user's balance and approve or reject the trade.
+  </Step>
+  <Step title="Your backend approves or rejects">
+    If the user has enough balance: deduct it and respond with `200`. AssetPay proceeds with the purchase. If not: respond with `4xx` (e.g. `402`) and the trade is cancelled.
+  </Step>
+  <Step title="Item purchased">
+    AssetPay buys the item from the supplier. The trade moves through `ACTIVE` to `HOLD`.
+  </Step>
+  <Step title="Delivered">
+    The item is sent to the user via Steam trade offer. After the hold period, the trade reaches `COMPLETED`.
+  </Step>
+</Steps>
+
+The key thing here: **nothing gets purchased until your backend approves it**. The INITIATED callback is the gate. Your backend is always in control of whether a withdrawal goes through.
+
+## Initiating a Withdrawal
+
+```http
+POST https://api.assetpay.co/client/trading/withdraw
+Content-Type: application/json
+Authorization: CLIENT_TOKEN
+
+{
+  "items": [
+    {
+      "itemId": "e5f6g7h8-...",
+      "market": 1,
+      "offer": {
+        "price": 45.00,
+        "reference": "ref_market_789"
+      }
+    }
+  ],
+  "game": "730",
+  "externalId": "wd_unique_789"
+}
+```
+
+## Request Fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `items` | array | Yes | Array of items to withdraw (min 1, max 50) |
+| `items[].itemId` | string | Yes | Item ID from the market response |
+| `items[].market` | number | Yes | Marketplace source (from the item's `market` field) |
+| `items[].offer.price` | number | Yes | The offer price in USD (max \$100,000) |
+| `items[].offer.reference` | string | Yes | The offer reference from market data |
+| `game` | string | No | `"730"` (CS2) or `"252490"` (Rust). Defaults to `"730"`. |
+| `externalId` | string | No | Your unique tracking ID (max 128 chars) |
+
+## Response
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": {
+    "id": "trade-uuid",
+    "type": "WITHDRAW",
+    "status": "INITIATED",
+    "game": "730",
+    "externalId": "wd_unique_789",
+    "items": [
+      {
+        "id": "e5f6g7h8-...",
+        "name": "AWP | Asiimov",
+        "marketHashName": "AWP | Asiimov (Field-Tested)",
+        "offer": {
+          "price": 45.00,
+          "reference": "ref_market_789"
+        },
+        "market": 1,
+        "purchaseStatus": "INITIATED"
+      }
+    ],
+    "totalPrice": 45.00,
+    "createdAt": "2026-03-04T10:00:00.000Z",
+    "updatedAt": "2026-03-04T10:00:00.000Z"
+  }
+}
+```
+
+## The INITIATED Callback
+
+This is the most important callback in the entire system. When a user initiates a withdrawal, AssetPay does **not** start purchasing immediately. Instead, it sends an `INITIATED` callback to your backend and waits for your response.
+
+Your backend should:
+1. Look up the user by `trade.clientSteamID` or `trade.externalClientUserId`
+2. Check if they have enough balance for `trade.totalPrice`
+3. If yes: deduct the balance and respond with HTTP `200`
+4. If no: respond with HTTP `4xx` (e.g. `402`) to reject
+
+### Approving a withdrawal
+
+Just respond with `200` and an empty body (or any body that isn't a rejection). AssetPay takes that as approval and starts the purchase.
+
+### Rejecting a withdrawal
+
+Respond with any `4xx` status code. `402` (Payment Required) is the recommended choice:
+
+```json
+HTTP/1.1 402 Payment Required
+Content-Type: application/json
+
+{ "reason": "Insufficient balance" }
+```
+
+The `reason` field is optional but useful for debugging. Any `4xx` status (400, 402, 403, 409, etc.) is treated as a rejection.
+
+**Legacy (still supported):** Respond with `200` and a rejection body like `{ "action": "reject" }`.
+
+Both approaches cancel the trade, mark it as `FAILED`, and refund your merchant wallet automatically. You'll receive a follow-up `FAILED` callback.
+
+<Warning>
+`5xx` responses and timeouts are **not** treated as rejections. They are treated as delivery failures and retried up to 10 times. Make sure your rejection logic returns `4xx`, not `5xx`.
+</Warning>
+
+## Balance Handling for Withdrawals
+
+| Event | What your backend should do |
+|-------|--------|
+| `INITIATED` | Check user balance, deduct it, respond `200` to approve. Or reject. |
+| `ACTIVE` | Item purchased from supplier. Acknowledge with `200`. |
+| `HOLD` | Item being delivered. Acknowledge with `200`. |
+| `COMPLETED` | Delivery complete. No balance action needed. |
+| `FAILED` | Refund `totalPrice` to the user's balance. |
+| `REVERTED` | Refund `totalPrice` to the user. Check `revertedBy` to see who cancelled. |
+
+### Trade Reversals
+
+In rare cases, a completed withdrawal can be reversed. This happens when either the supplier or the user cancels the Steam trade after acceptance. The trade object includes a `revertedBy` field:
+
+- `"SUPPLIER"` - the marketplace supplier reversed the trade
+- `"USER"` - the user declined or cancelled the trade offer
+
+When a withdrawal is reverted, your merchant wallet is automatically refunded by AssetPay.
+
+## Per-Item Purchase Status
+
+For multi-item withdrawals, each item in the `items` array has its own `purchaseStatus` field:
+
+| Status | Meaning |
+|--------|---------|
+| `INITIATED` | Purchase not started yet |
+| `PENDING` | Being purchased from supplier |
+| `ACTIVE` | Purchased, trade offer being sent |
+| `HOLD` | Trade offer sent, waiting for acceptance |
+| `COMPLETED` | Item delivered successfully |
+| `FAILED` | Purchase failed for this item |
+| `REVERTED` | Trade was reversed for this item |
+
+This lets you show per-item progress in your UI for multi-item withdrawals.

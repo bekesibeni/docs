@@ -1,0 +1,168 @@
+---
+title: "Instant Credit"
+description: "How instant deposits work and how to maximize the credit your users receive."
+---
+
+# Instant Credit
+
+Steam enforces a 7-day trade protection period on CS2 trades. Without instant credit, your users would have to wait a full week before seeing their balance after depositing skins. The instant credit system solves this by advancing a portion of the deposit value immediately, backed by collateral.
+
+<Info>
+Rust trades have **no trade protection period**. Rust deposits are always credited instantly and in full, regardless of any settings described on this page.
+</Info>
+
+## How It Works
+
+When a user deposits CS2 skins with `isInstant: true` (the default), AssetPay splits the deposit value into two parts:
+
+- **`preCredit`** - credited to the user's balance immediately when the trade enters `HOLD` status
+- **`pendingCredit`** - credited when the 7-day hold ends and the trade reaches `COMPLETED`
+
+The split depends on how much collateral is available for that user. More collateral means a larger instant portion.
+
+```
+preCredit + pendingCredit = totalPrice (always)
+```
+
+### Example
+
+A user deposits a skin worth \$100. Based on their profile, \$60 of collateral is available.
+
+| Field | Value |
+|-------|-------|
+| `totalPrice` | \$100.00 |
+| `preCredit` | \$60.00 |
+| `pendingCredit` | \$40.00 |
+
+The user sees \$60 in their balance right away. The remaining \$40 arrives after the hold period.
+
+## Collateral
+
+Collateral is the pool of funds backing instant credit. It comes from two sources:
+
+1. **Provider collateral** - calculated by AssetPay's risk model based on the user's trust score, deposit history, verification level, and the data you pass in `clientData`
+2. **Merchant collateral** - optional additional collateral you can provide to increase your users' instant credit
+
+The total collateral available for a deposit is:
+
+```
+availableCollateral = (providerCollateral + merchantCollateral) - activeExposure
+```
+
+**Active exposure** is the sum of `preCredit` from all of the user's currently pending trades (trades in `INITIATED`, `ACTIVE`, `HOLD`, or `ESCROW` status). This prevents a single user from leveraging the same collateral pool across many simultaneous deposits.
+
+## What Determines Collateral
+
+The risk model evaluates four factors to calculate provider collateral:
+
+### 1. Deposit History (Platform Readiness)
+
+How much the user has deposited through AssetPay historically. A user with \$60,000+ in completed deposits has full platform readiness. A brand new user starts at zero.
+
+### 2. External Data (clientData)
+
+The `clientData` you pass when authenticating a client feeds directly into the risk calculation. Four fields matter:
+
+| Field | Effect |
+|-------|--------|
+| `totalWager` | Higher wager history on your platform increases external trust. Users who have wagered hundreds of thousands of dollars are treated as lower risk. |
+| `kycLevel` | KYC level 3 (your platform's highest verification) unlocks better thresholds. |
+| `fiatDeposits` | Having fiat deposit history is a positive signal. |
+| `cryptoDeposits` | Having crypto deposit history is a positive signal. Combined with `fiatDeposits`, having both payment methods active gives the best scoring. |
+
+The combination of these fields determines the "external readiness" score. A user with KYC level 3, both payment methods, and high wager volume gets the maximum external score.
+
+### 3. Trust Factor
+
+Every user has a trust factor that starts near zero and grows with each completed deposit. It acts as a multiplier on the readiness scores.
+
+**Trust increases** when deposits complete successfully. Larger deposits produce bigger trust gains, up to a per-trade cap.
+
+**Trust decreases** when trades are reverted. Reversals carry a penalty that can push trust negative. A user with negative trust gets zero instant credit until they rebuild it through successful deposits.
+
+### 4. Verification Level
+
+Users who complete identity verification get higher collateral floors and caps. See [Identity Verification](/guides/identity-verification) for details.
+
+| Level | Meaning | Effect |
+|-------|---------|--------|
+| 0 | Unverified | Baseline collateral, lower instant credit cap |
+| 1 | Verified (PictureID) | Higher collateral floor, significantly higher instant credit cap |
+
+## Verification Caps
+
+Even when a user has plenty of collateral available, the instant credit per deposit is capped by their verification level:
+
+| Verification Level | Instant Credit Cap (per deposit) |
+|--------------------|---------------------------------|
+| Level 0 (unverified) | Up to \$50 |
+| Level 1 (verified) | Up to \$1,000 |
+
+These are the default caps. The exact values depend on the active risk policy.
+
+This means an unverified user depositing \$500 worth of skins will receive at most \$50 instantly, with the remaining \$450 held until `COMPLETED`. A verified user making the same deposit could receive the full \$500 instantly if they have enough collateral.
+
+## Enabling Instant Credit
+
+Instant credit is enabled by default. When you initiate a deposit, the `isInstant` field defaults to `true`:
+
+```json
+{
+  "items": [...],
+  "game": "730",
+  "isInstant": true
+}
+```
+
+Set `isInstant: false` to skip instant credit entirely. The full amount will be held until `COMPLETED`.
+
+## Reading the Collateral
+
+The inventory endpoint returns the user's available collateral before they start depositing:
+
+```json
+{
+  "data": {
+    "inventory": [...],
+    "count": 42,
+    "collateral": 150.00
+  }
+}
+```
+
+The `collateral` field tells you how much instant credit (in USD) is currently available for this user. Use it to show users an estimate of how much they'll receive instantly before they select items.
+
+## Balance Handling
+
+Your callback handler should credit the user in two stages:
+
+| Callback Event | Action |
+|----------------|--------|
+| `HOLD` | Credit the `preCredit` amount to the user's balance |
+| `COMPLETED` | Credit the `pendingCredit` amount (the remainder) |
+| `REVERTED` | Reverse the `preCredit` amount that was already credited |
+
+If `isInstant` was `false` or the user had zero collateral, `preCredit` will be `0` and the full amount arrives on `COMPLETED`.
+
+<Warning>
+Always handle `REVERTED` callbacks. If a trade is reversed during the hold period, you must deduct the instant credit that was already given. Failing to handle reversals creates a balance discrepancy.
+</Warning>
+
+## Trust and Reversals
+
+Reversals carry real consequences. When a deposit is reverted:
+
+1. The user's trust factor takes a penalty proportional to the reverted value
+2. Their deposit history counters are reduced
+3. If the user is identity-verified, the penalty can cascade to **all accounts linked to the same identity**
+
+This means if someone verifies their identity, links multiple Steam accounts, and then gets a reversal on one account, all of their linked accounts take a trust hit. This is intentional and prevents multi-account abuse.
+
+## Maximizing Instant Credit for Your Users
+
+To give your users the best instant credit experience:
+
+1. **Pass accurate `clientData`** on every authentication call. The more context you provide (wager history, KYC level, payment methods), the higher the external readiness score.
+2. **Encourage identity verification.** Verified users get dramatically higher instant credit caps (\$50 vs \$1,000 by default).
+3. **Keep `clientData` fresh.** It's updated on every authentication call, so pass current values each time a user starts a session.
+4. **Show the `collateral` field** from the inventory response in your UI so users know what to expect before depositing.

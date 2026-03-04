@@ -1,0 +1,132 @@
+---
+title: "Inventory"
+description: "Fetching and displaying user inventories with pricing."
+---
+
+# Inventory
+
+The inventory endpoint returns a user's tradeable Steam items along with live offer prices. This is what you show users when they want to deposit (sell) items.
+
+## Fetching Inventory
+
+```http
+GET https://api.assetpay.co/client/inventory?game=730
+Authorization: CLIENT_TOKEN
+```
+
+Response:
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": {
+    "inventory": [
+      {
+        "id": "a1b2c3d4-...",
+        "name": "AK-47 | Redline",
+        "marketHashName": "AK-47 | Redline (Field-Tested)",
+        "type": "Rifle",
+        "iconUrl": "IzMF03bk9WpSBq-S-ekoE33L-iLqGFHVaU25ZzQNQcXdA3g5gMEPvUZZEfSMJ6dESN8p_2SVTY7V2N4MxGVIwXpaL3_a3Hh...",
+        "appid": 730,
+        "contextid": 2,
+        "tradable": true,
+        "accepted": true,
+        "marketPrice": 12.50,
+        "offer": {
+          "price": 10.75,
+          "reference": "ref_abc123",
+          "maxAmount": 1
+        },
+        "exterior": "Field-Tested",
+        "wear": "0.25432",
+        "rarity": "Classified",
+        "color": "#D32CE6",
+        "stickers": [
+          {
+            "name": "NaVi | Katowice 2019",
+            "slot": 0,
+            "wear": 0.05,
+            "iconUrl": "IzMF03bi9WpSBq-S-ekoE33L-iLqGFHVaU25Zzc..."
+          }
+        ],
+        "paintSeed": 312
+      }
+    ],
+    "count": 42,
+    "updatedAt": "2026-03-04T10:00:00.000Z",
+    "collateral": 150.00
+  }
+}
+```
+
+## Query Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `game` | number | `730` | Game app ID (`730` for CS2, `252490` for Rust) |
+| `refresh` | boolean | `false` | Force-refresh from Steam instead of using cache |
+| `search` | string | - | Filter items by name |
+| `sort` | string | - | Sort order for results |
+| `minPrice` | number | - | Minimum offer price filter (USD) |
+| `maxPrice` | number | - | Maximum offer price filter (USD) |
+| `page` | number | `1` | Page number |
+| `perPage` | number | `50` | Items per page |
+
+## Understanding the Response
+
+### Pricing Fields
+
+Each item can have two price fields, and they mean different things:
+
+- **`marketPrice`** is the BUFF163 market reference price in USD. This is not what the user gets paid. Use it to show market value context in your UI.
+- **`offer.price`** is the actual amount in USD the user will receive for depositing this item. This is the number that matters for your balance calculations.
+- **`offer.reference`** is an opaque string you must pass back when initiating the deposit. It identifies the specific offer.
+
+### The `accepted` Field
+
+Items where `accepted` is `true` have a valid offer and can be deposited. Items where it's `false` or missing don't have an active buyer and can't be deposited right now.
+
+### Collateral
+
+The `collateral` field in the response tells you how much instant credit is available for this user if you're using instant deposits. See the [Deposits](/guides/deposits) guide for details.
+
+## Caching Behavior
+
+Inventory results are cached for 15 minutes on our side. The `updatedAt` field tells you when the cache was last refreshed.
+
+Use `refresh=true` only when:
+- Loading the inventory for the first time in a session
+- The user explicitly asks to refresh
+
+Don't refresh on every page load. It puts unnecessary load on Steam's API and can lead to rate limiting.
+
+## Rust Items
+
+Rust items work the same way, but they can be stackable. When an item has an `amount` field greater than 1, it means the user has multiple copies of the same item. The `offer.maxAmount` field tells you how many can be deposited in a single trade.
+
+```json
+{
+  "id": "...",
+  "name": "Large Wood Box",
+  "marketHashName": "Large Wood Box",
+  "appid": 252490,
+  "amount": 5,
+  "offer": {
+    "price": 0.15,
+    "reference": "ref_rust_123",
+    "maxAmount": 10
+  }
+}
+```
+
+## Filtering and Sorting
+
+You can combine query parameters to build a search UI:
+
+```http
+GET https://api.assetpay.co/client/inventory?game=730&search=knife&minPrice=50&maxPrice=500&sort=price_asc
+Authorization: CLIENT_TOKEN
+```
+
+The `count` field in the response reflects the total matching items (not just the current page), so you can build pagination controls.

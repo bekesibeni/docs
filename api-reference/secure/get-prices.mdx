@@ -1,0 +1,85 @@
+---
+title: "Get Prices"
+description: "Fetch current offer prices for all items."
+---
+
+# GET /secure/prices
+
+Returns current offer prices for items in a specific game. Use this to sync pricing data into your own database or display price information without fetching a specific user's inventory.
+
+**Authentication:** API Key (`api-key` header, requires `CORE_ACCESS` scope)
+
+## Request
+
+```http
+GET https://api.assetpay.co/secure/prices?game=730
+api-key: YOUR_API_KEY
+```
+
+### Query Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `game` | number | `730` | Game app ID (`730` = CS2, `252490` = Rust) |
+
+## Response (CS2)
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": [
+    {
+      "marketHashName": "AK-47 | Redline (Field-Tested)",
+      "accepted": true,
+      "price": 10.75
+    },
+    {
+      "marketHashName": "AWP | Dragon Lore (Factory New)",
+      "accepted": true,
+      "price": 1720.50
+    }
+  ]
+}
+```
+
+### CS2 Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `marketHashName` | string | Item's market hash name |
+| `accepted` | boolean | Whether the item is currently accepted for trading |
+| `price` | number | Current offer price in USD |
+
+## Response (Rust)
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": [
+    {
+      "marketHashName": "Large Wood Box",
+      "overstockLimit": 100,
+      "depositPrice": 0.12,
+      "withdrawPrice": 0.18
+    }
+  ]
+}
+```
+
+### Rust Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `marketHashName` | string | Item's market hash name |
+| `overstockLimit` | number | Maximum quantity accepted |
+| `depositPrice` | number | Price paid for deposits (USD) |
+| `withdrawPrice` | number | Price charged for withdrawals (USD) |
+
+## Rate Limits
+
+| Merchant Status | Limit |
+|----------------|-------|
+| Verified | 1,000 requests / hour |
+| Unverified | 100 requests / hour |

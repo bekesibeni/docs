@@ -1,0 +1,119 @@
+---
+title: "Initiate Deposit"
+description: "Start a skin deposit for the authenticated user."
+---
+
+# POST /client/trading/deposit
+
+Initiates a deposit (sell) trade. The user's items are sent via Steam trade offer and the value is credited to your merchant balance.
+
+**Authentication:** Client Token (`Authorization` header)
+
+## Request
+
+```http
+POST https://api.assetpay.co/client/trading/deposit
+Content-Type: application/json
+Authorization: CLIENT_TOKEN
+
+{
+  "items": [
+    {
+      "itemId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "offer": {
+        "price": 10.75,
+        "reference": "ref_abc123"
+      }
+    }
+  ],
+  "game": "730",
+  "externalId": "dep_unique_123",
+  "isInstant": true
+}
+```
+
+### Body Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `items` | array | Yes | Items to deposit (min 1) |
+| `items[].itemId` | string | Yes | Item ID from inventory (5-256 chars) |
+| `items[].offer` | object | No | Price and reference. If omitted, sells at best available offer. |
+| `items[].offer.price` | number | Yes* | Offer price in USD (*required if offer is provided) |
+| `items[].offer.reference` | string | Yes* | Offer reference from inventory (*required if offer is provided) |
+| `items[].amount` | number | No | Quantity for stackable Rust items (default: 1, max: 10000) |
+| `game` | string | No | `"730"` or `"252490"`. Defaults to `"730"`. |
+| `externalId` | string | No | Your unique tracking ID (max 128 chars). Must be unique per trade. |
+| `isInstant` | boolean | No | Request instant credit during hold period (default: `true`) |
+
+## Response
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": {
+    "id": "trade-uuid",
+    "type": "DEPOSIT",
+    "status": "INITIATED",
+    "game": "730",
+    "externalId": "dep_unique_123",
+    "merchantId": "merchant-uuid",
+    "clientUserId": "client-uuid",
+    "clientSteamID": "76561198012345678",
+    "clientTradeUrl": "https://steamcommunity.com/tradeoffer/new/?partner=...",
+    "items": [
+      {
+        "id": "a1b2c3d4-...",
+        "name": "AK-47 | Redline",
+        "marketHashName": "AK-47 | Redline (Field-Tested)",
+        "type": "Rifle",
+        "iconUrl": "IzMF03bk9WpSBq-S-ekoE33L-iLqGFHVaU25ZzQNQcXdA3g5gMEPvUZZEfSMJ6dESN8p_2SVTY7V2N4MxGVIwXpaL3_a3Hh...",
+        "appid": 730,
+        "contextid": 2,
+        "tradable": true,
+        "accepted": true,
+        "marketPrice": 12.50,
+        "offer": {
+          "price": 10.75,
+          "reference": "ref_abc123"
+        },
+        "exterior": "Field-Tested",
+        "wear": "0.25432"
+      }
+    ],
+    "totalPrice": 10.75,
+    "isInstant": true,
+    "createdAt": "2026-03-04T10:00:00.000Z",
+    "updatedAt": "2026-03-04T10:00:00.000Z"
+  }
+}
+```
+
+The response is a full [ITrade](/reference/types#itrade) object. After creation, the trade progresses through callbacks. See [Trade Lifecycle](/guides/trade-lifecycle).
+
+## Rate Limits
+
+| Merchant Status | Limit |
+|----------------|-------|
+| Verified | 500 requests / min |
+| Unverified | 5 requests / min |
+
+Shared across all clients of the same merchant.
+
+## Errors
+
+| Code | Key | When |
+|------|-----|------|
+| 1 | `EXTERNAL_ID_EXISTS` | The `externalId` is already in use |
+| 2 | `MISSING_ITEMS` | Empty items array |
+| 3 | `INVENTORY_FETCH_FAILED` | Couldn't load user's inventory |
+| 4 | `NO_OFFER_FOUND` | No valid offer for this item |
+| 6 | `TOO_MANY_ACTIVE_TRADES` | User has too many pending trades |
+| 7 | `USER_NOT_TRADEABLE` | User's Steam account can't trade |
+| 8 | `TOO_MANY_ITEMS` | Too many items in one request |
+| 9 | `ITEMS_UNAVAILABLE` | Items not found in inventory |
+| 10 | `ITEMS_NOT_ACCEPTED` | Items not accepted for deposit |
+| 11 | `PRICE_CHANGED` | Offer price has changed since fetch |
+| 14 | `INVALID_TRADEURL` | User's trade URL is invalid |
+| 21 | `DEPOSIT_IN_PROGRESS` | Another deposit is already processing for this user |

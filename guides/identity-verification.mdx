@@ -1,0 +1,190 @@
+---
+title: "Identity Verification"
+description: "How identity verification works and its impact on deposit limits."
+---
+
+# Identity Verification
+
+<Note>
+Identity verification is not yet available in production. This page documents how the system works so you can plan your integration ahead of time. We'll announce when it goes live.
+</Note>
+
+Identity verification lets your users prove their real-world identity through a document scan and selfie. Verified users unlock significantly higher instant deposit limits, which means faster access to their balance after depositing skins.
+
+## Why Verification Matters
+
+Without verification, instant credit per deposit is capped at a relatively low amount (around \$50 by default). This is a risk control. With verification, that cap jumps to around \$1,000 per deposit, because we can tie the account to a real identity and enforce consequences across all accounts owned by the same person.
+
+| Verification Level | Instant Credit Cap | Collateral Floor |
+|--------------------|--------------------|------------------|
+| Level 0 (none) | ~\$50/deposit | Baseline |
+| Level 1 (PictureID) | ~\$1,000/deposit | Higher guaranteed minimum |
+
+The exact numbers depend on the active risk policy, but the difference is substantial.
+
+## The Verification Flow
+
+<Steps>
+  <Step title="Start verification">
+    Your frontend calls `POST /client/verification/start` with the user's client token. Optionally include an email address (needed for multi-account linking later). You receive back a `captureUrl`.
+  </Step>
+  <Step title="User completes capture">
+    Open the `captureUrl` in a browser or webview. The user scans their ID document and takes a selfie. The capture process is handled entirely by the verification provider.
+  </Step>
+  <Step title="Processing">
+    After capture, the provider processes the document and liveness check. This typically takes a few seconds to a minute.
+  </Step>
+  <Step title="Result">
+    A webhook notifies AssetPay of the result. If accepted, the user's `verificationLevel` is updated to `1` and higher deposit limits take effect immediately.
+  </Step>
+</Steps>
+
+## Starting Verification
+
+```http
+POST https://api.assetpay.co/client/verification/start
+Content-Type: application/json
+Authorization: CLIENT_TOKEN
+
+{
+  "email": "user@example.com"
+}
+```
+
+The `email` field is optional but recommended. It's used for multi-account linking (see below).
+
+Response:
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": {
+    "captureUrl": "https://capture.signicat.com/...",
+    "dossierId": "dossier-uuid"
+  }
+}
+```
+
+Open `captureUrl` in the user's browser. After they complete the capture, they'll be redirected back to your site.
+
+<Warning>
+Only one verification process can be active at a time per user. If a process was started within the last 30 minutes, you'll get a `VERIFICATION_IN_PROGRESS` error. Wait for it to complete or expire before starting a new one.
+</Warning>
+
+## Checking Status
+
+Poll the status endpoint to update your UI:
+
+```http
+GET https://api.assetpay.co/client/verification/status
+Authorization: CLIENT_TOKEN
+```
+
+Response:
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": {
+    "verificationLevel": 1,
+    "email": "user@example.com",
+    "latestProcess": {
+      "dossierId": "dossier-uuid",
+      "processId": "process-uuid",
+      "captureUrl": "https://capture.signicat.com/...",
+      "status": "ACCEPTED",
+      "createdAt": "2026-03-04T14:30:00Z",
+      "completedAt": "2026-03-04T14:35:00Z"
+    },
+    "linkedIdentity": {
+      "id": "identity-uuid",
+      "firstName": "John",
+      "lastName": "Doe",
+      "documentCountry": "NOR",
+      "linkedAt": "2026-03-04T14:35:00Z"
+    }
+  }
+}
+```
+
+### Process Statuses
+
+| Status | Meaning |
+|--------|---------|
+| `CREATED` | Verification started, capture URL generated |
+| `CAPTURE_PENDING` | User is in the capture flow |
+| `PROCESSING` | Document and selfie are being analyzed |
+| `ACCEPTED` | Verification successful, user is now level 1 |
+| `REJECTED` | Document or selfie failed validation |
+| `ERROR` | Something went wrong during processing |
+| `EXPIRED` | Process was not completed within 30 minutes |
+
+Once `verificationLevel` is `1`, the user's instant credit cap is raised immediately. No further action needed on your side.
+
+## Multi-Account Linking
+
+Some users have multiple Steam accounts. Identity verification supports linking multiple accounts to the same real-world identity, so they don't need to verify each account separately.
+
+### How It Works
+
+1. User verifies on their primary account (document + selfie)
+2. On a second account, you call `POST /client/verification/start` with the same email address
+3. Then call `POST /client/verification/link` to link the second account to the existing verified identity
+
+```http
+POST https://api.assetpay.co/client/verification/link
+Authorization: CLIENT_TOKEN
+```
+
+If the email matches a previously verified identity, the account is linked and its `verificationLevel` is set to `1`. No second document scan is required.
+
+### Limits
+
+Each identity has a maximum number of linked accounts (default: 10). If a user tries to link more accounts than the cap allows, they'll get a `VERIFICATION_ACCOUNT_CAP_REACHED` error.
+
+## Security: Trust Cascade
+
+Identity linking is not just a convenience feature. It's also a security mechanism.
+
+When accounts are linked to the same identity, **trust penalties cascade across all of them**. If one linked account gets a deposit reversal (fraud, chargeback, or cancelled trade), the trust factor is destroyed on every account tied to that identity.
+
+This means:
+- A user can't create multiple Steam accounts to bypass trust penalties
+- One bad trade affects all of their accounts
+- Recovery requires rebuilding trust from near-zero on all accounts
+
+This is by design. It's the tradeoff that makes higher instant credit limits safe for verified users.
+
+## What Gets Stored
+
+AssetPay takes privacy seriously in the verification flow:
+
+- **National ID numbers are never stored.** They're hashed with BLAKE3 on receipt. Only the hash is persisted, used for identity matching across accounts.
+- **Basic identity fields** (first name, last name, document country) are stored to help with admin lookups.
+- **Full verification responses** from the provider are stored for audit purposes.
+
+## Errors
+
+| Code | Key | When |
+|------|-----|------|
+| 1500 | `VERIFICATION_NOT_AVAILABLE` | Verification is not enabled yet |
+| 1501 | `VERIFICATION_ALREADY_VERIFIED` | Account is already at level 1 |
+| 1502 | `VERIFICATION_IN_PROGRESS` | Active process exists (wait 30 min or complete it) |
+| 1504 | `VERIFICATION_BANNED_IDENTITY` | This identity has been banned |
+| 1505 | `VERIFICATION_ACCOUNT_CAP_REACHED` | Too many accounts linked to this identity |
+| 1506 | `VERIFICATION_ALREADY_LINKED` | Account is already linked to an identity |
+| 1507 | `VERIFICATION_LINK_FAILED` | No matching identity found for email |
+| 1510 | `VERIFICATION_EMAIL_REQUIRED` | Email is needed for linking (pass it in `/start`) |
+
+## Integration Checklist
+
+When verification goes live, here's what you'll need:
+
+1. **Add a "Verify Identity" button** in your UI that calls `POST /client/verification/start` and opens the returned `captureUrl`
+2. **Poll `/client/verification/status`** to update the UI when verification completes
+3. **Show verification status** on the user's profile so they know their current level
+4. **Display the higher collateral** from the inventory response for verified users, so they see the benefit
+5. **Handle the `VERIFICATION_IN_PROGRESS` error** gracefully (show "verification pending" instead of an error)
+6. **(Optional) Support multi-account linking** by collecting an email and calling `/client/verification/link` for secondary accounts

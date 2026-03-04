@@ -1,0 +1,86 @@
+---
+title: "Get Item Listings"
+description: "View specific listings for an item type."
+---
+
+# GET /client/market/item
+
+Returns individual listings for a specific item. Use this when you want to let users pick a specific skin variant (different float, stickers, etc.) rather than just the cheapest one.
+
+**Authentication:** Client Token (`Authorization` header)
+
+## Request
+
+```http
+GET https://api.assetpay.co/client/market/item?itemId=AK-47%20%7C%20Redline%20(Field-Tested)&delivery=normal&page=1
+Authorization: CLIENT_TOKEN
+```
+
+### Query Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `itemId` | string | Required | Market hash name or item ID |
+| `delivery` | string | `normal` | `"normal"` or `"auto"` delivery mode |
+| `page` | number | `1` | Page number |
+
+## Response
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": [
+    {
+      "id": "listing-uuid-1",
+      "name": "AK-47 | Redline",
+      "marketHashName": "AK-47 | Redline (Field-Tested)",
+      "type": "Rifle",
+      "iconUrl": "IzMF03bk9WpSBq-S-ekoE33L-iLqGFHVaU25ZzQNQcXdA3g5gMEPvUZZEfSMJ6dESN8p_2SVTY7V2N4MxGVIwXpaL3_a3Hh...",
+      "appid": 730,
+      "contextid": 2,
+      "tradable": true,
+      "offer": {
+        "price": 10.50,
+        "reference": "ref_listing_001",
+        "delivery": "normal"
+      },
+      "exterior": "Field-Tested",
+      "wear": "0.15234",
+      "paintSeed": 123,
+      "stickers": [
+        {
+          "name": "iBUYPOWER | Katowice 2014",
+          "slot": 0,
+          "wear": 0,
+          "iconUrl": "IzMF03bi9WpSBq-S-ekoE33L-iLqGFHVaU25Zzc..."
+        }
+      ],
+      "market": 1
+    },
+    {
+      "id": "listing-uuid-2",
+      "name": "AK-47 | Redline",
+      "marketHashName": "AK-47 | Redline (Field-Tested)",
+      "offer": {
+        "price": 9.80,
+        "reference": "ref_listing_002",
+        "delivery": "normal"
+      },
+      "wear": "0.35678",
+      "paintSeed": 456,
+      "stickers": [],
+      "market": 2
+    }
+  ]
+}
+```
+
+Each listing represents a specific item instance with its own float value, stickers, and price. Use the `id`, `market`, `offer.price`, and `offer.reference` when initiating a withdrawal.
+
+## Rate Limits
+
+| Merchant Status | Limit |
+|----------------|-------|
+| Verified | 2,000 requests / min |
+| Unverified | 20 requests / min |

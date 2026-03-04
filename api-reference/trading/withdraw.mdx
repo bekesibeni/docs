@@ -1,0 +1,117 @@
+---
+title: "Initiate Withdrawal"
+description: "Start a skin withdrawal for the authenticated user."
+---
+
+# POST /client/trading/withdraw
+
+Initiates a withdrawal (buy) trade. AssetPay purchases the item from a marketplace supplier and delivers it to the user via Steam trade offer.
+
+**Authentication:** Client Token (`Authorization` header)
+
+## Request
+
+```http
+POST https://api.assetpay.co/client/trading/withdraw
+Content-Type: application/json
+Authorization: CLIENT_TOKEN
+
+{
+  "items": [
+    {
+      "itemId": "e5f6g7h8-i9j0-1234-abcd-ef5678901234",
+      "market": 1,
+      "offer": {
+        "price": 45.00,
+        "reference": "ref_market_789"
+      }
+    }
+  ],
+  "game": "730",
+  "externalId": "wd_unique_789"
+}
+```
+
+### Body Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `items` | array | Yes | Items to withdraw (min 1, max 50) |
+| `items[].itemId` | string | Yes | Item ID from market data (5-256 chars) |
+| `items[].market` | number | Yes | Marketplace source (from the item's `market` field) |
+| `items[].offer.price` | number | Yes | Purchase price in USD (max \$100,000) |
+| `items[].offer.reference` | string | Yes | Offer reference from market data (1-256 chars) |
+| `game` | string | No | `"730"` or `"252490"`. Defaults to `"730"`. |
+| `externalId` | string | No | Your unique tracking ID (max 128 chars). Must be unique per trade. |
+
+## Response
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": {
+    "id": "trade-uuid",
+    "type": "WITHDRAW",
+    "status": "INITIATED",
+    "game": "730",
+    "externalId": "wd_unique_789",
+    "merchantId": "merchant-uuid",
+    "clientUserId": "client-uuid",
+    "clientSteamID": "76561198012345678",
+    "clientTradeUrl": "https://steamcommunity.com/tradeoffer/new/?partner=...",
+    "items": [
+      {
+        "id": "e5f6g7h8-...",
+        "name": "AWP | Asiimov",
+        "marketHashName": "AWP | Asiimov (Field-Tested)",
+        "type": "Sniper Rifle",
+        "iconUrl": "IzMF03bk9WpSBq-S-ekoE33L-iLqGFHVaU25ZzQNQcXdEHOQ6UFc5FT_0NqFMOBBN-s...",
+        "appid": 730,
+        "contextid": 2,
+        "tradable": true,
+        "offer": {
+          "price": 45.00,
+          "reference": "ref_market_789",
+          "delivery": "normal"
+        },
+        "market": 1,
+        "purchaseStatus": "INITIATED"
+      }
+    ],
+    "totalPrice": 45.00,
+    "createdAt": "2026-03-04T10:00:00.000Z",
+    "updatedAt": "2026-03-04T10:00:00.000Z"
+  }
+}
+```
+
+The response is a full [ITrade](/reference/types#itrade) object. Withdrawal items include `market` and `purchaseStatus` fields.
+
+## How Balance Approval Works
+
+After this endpoint is called, AssetPay sends an `INITIATED` callback to your backend **before purchasing anything**. Your backend checks the user's balance, deducts it, and responds with `200` to approve. If the balance is insufficient, respond with `4xx` (e.g. `402 Payment Required`) to reject the trade. See the [Withdrawals guide](/guides/withdrawals#the-initiated-callback) for details.
+
+## Rate Limits
+
+| Merchant Status | Limit |
+|----------------|-------|
+| Verified | 500 requests / min |
+| Unverified | 5 requests / min |
+
+Shared across all clients of the same merchant.
+
+## Errors
+
+| Code | Key | When |
+|------|-----|------|
+| 1 | `EXTERNAL_ID_EXISTS` | The `externalId` is already in use |
+| 2 | `MISSING_ITEMS` | Empty items array |
+| 8 | `TOO_MANY_ITEMS` | More than 50 items |
+| 9 | `ITEMS_UNAVAILABLE` | Items no longer available on market |
+| 11 | `PRICE_CHANGED` | Offer price changed since fetch |
+| 12 | `MERCHANT_BALANCE_LOW` | Your merchant balance can't cover this withdrawal |
+| 14 | `INVALID_TRADEURL` | User's trade URL is invalid |
+| 15 | `LISTING_NOT_FOUND` | Marketplace listing not found |
+| 16 | `LISTING_PRICE_INVALID` | Listing has invalid price |
+| 17 | `INVALID_LISTING_ID` | Invalid listing ID format |

@@ -1,87 +1,96 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "AssetPay",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#00D68F",
+    "light": "#00D68F",
+    "dark": "#00B87A"
   },
   "favicon": "/favicon.svg",
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Getting Started",
             "pages": [
               "index",
-              "quickstart",
-              "development"
+              "quickstart"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Integration",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "guides/authentication",
+              "guides/inventory",
+              "guides/market",
+              "guides/deposits",
+              "guides/withdrawals",
+              "guides/instant-credit",
+              "guides/identity-verification",
+              "guides/trade-lifecycle"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Events & Webhooks",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "guides/callbacks",
+              "guides/websocket"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "Reference",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "reference/types",
+              "reference/errors"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Overview",
             "pages": [
               "api-reference/introduction"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Authentication",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api-reference/authentication/authenticate-client"
+            ]
+          },
+          {
+            "group": "Client",
+            "pages": [
+              "api-reference/client/get-inventory",
+              "api-reference/client/get-market",
+              "api-reference/client/get-suggestions",
+              "api-reference/client/get-item-listings",
+              "api-reference/client/get-trades"
+            ]
+          },
+          {
+            "group": "Trading",
+            "pages": [
+              "api-reference/trading/deposit",
+              "api-reference/trading/withdraw"
+            ]
+          },
+          {
+            "group": "Secure",
+            "pages": [
+              "api-reference/secure/check-tradeurl",
+              "api-reference/secure/get-prices"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
+    ]
   },
   "logo": {
     "light": "/logo/light.svg",
@@ -91,32 +100,22 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "href": "mailto:support@assetpay.co"
       }
     ],
     "primary": {
       "type": "button",
       "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "href": "https://staging.assetpay.co"
     }
   },
   "contextual": {
     "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
+      "copy",
+      "view"
+    ]
   },
   "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    "socials": {}
   }
 }

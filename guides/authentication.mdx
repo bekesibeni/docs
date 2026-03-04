@@ -1,0 +1,172 @@
+---
+title: "Authentication"
+description: "How to authenticate your users with AssetPay for trading."
+---
+
+# Client Authentication
+
+Before a user can trade, you need to create a **client token** for them. This token ties a Steam account to your merchant account and is used for all trading operations on behalf of that user.
+
+There are two ways to get a client token: call our API, or generate one locally on your backend.
+
+## Option 1: API Authentication
+
+Make a POST request with your API key:
+
+```http
+POST https://api.assetpay.co/auth/authenticate-client
+Content-Type: application/json
+api-key: YOUR_API_KEY
+
+{
+  "clientSteamId": "76561198012345678",
+  "clientTradeUrl": "https://steamcommunity.com/tradeoffer/new/?partner=12345678&token=AbCdEfGh",
+  "clientId": "user-123",
+  "clientData": {
+    "totalWager": 5000,
+    "kycLevel": 2,
+    "fiatDeposits": true,
+    "cryptoDeposits": false
+  }
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `clientSteamId` | string | Yes | User's Steam ID 64 (must match `76561XXXXXXXXXXXX` format, 17 digits) |
+| `clientTradeUrl` | string | Yes | User's Steam trade URL |
+| `clientId` | string | No | Your own identifier for this user (max 128 chars). Stored on every trade. |
+| `clientData` | object | No | User context for instant deposit collateral calculations. See fields below. |
+
+### clientData Fields
+
+The `clientData` object feeds into the risk model that determines how much instant credit a user qualifies for during deposits. You can pass any key-value pairs, but these specific fields are used in collateral calculations:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `totalWager` | number | Total amount (USD) the user has wagered on your platform. Higher wager history increases the user's external trust score and unlocks more instant credit. |
+| `kycLevel` | number | The user's KYC verification level on your platform (0-3). Level 3 combined with diverse payment methods significantly raises the wager threshold used in risk scoring. |
+| `fiatDeposits` | boolean | Whether the user has made fiat deposits on your platform. Payment method diversity is a positive trust signal. |
+| `cryptoDeposits` | boolean | Whether the user has made crypto deposits on your platform. Combined with `fiatDeposits`, having both methods active unlocks the highest collateral thresholds. |
+
+All fields are optional. If omitted, they default to `0` or `false` in the risk calculation, which means the user gets the baseline collateral amount.
+
+<Tip>
+The more context you provide, the more instant credit your users can access. A user with high wager volume, KYC level 3, and both fiat and crypto deposits will qualify for significantly more collateral than one with no data.
+</Tip>
+
+`clientData` is updated every time you authenticate the same user. Pass fresh values on each authentication call to keep the risk model accurate.
+
+Response:
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIs..."
+  }
+}
+```
+
+The token is valid for 24 hours. Re-authenticate users when the token expires.
+
+## Option 2: Local Token Generation
+
+If you want to skip the network round-trip, you can sign the token locally using the `jose` library and your API secret.
+
+```typescript
+import { SignJWT } from 'jose';
+
+const secretKey = new TextEncoder().encode(YOUR_API_SECRET);
+
+const token = await new SignJWT({
+  client: {
+    steamID: '76561198012345678',
+    tradeUrl: 'https://steamcommunity.com/tradeoffer/new/?partner=12345678&token=AbCdEfGh',
+    clientId: 'user-123',       // optional
+    clientData: {               // optional, used for collateral calculations
+      totalWager: 5000,
+      kycLevel: 2,
+      fiatDeposits: true,
+      cryptoDeposits: false
+    }
+  }
+})
+  .setProtectedHeader({
+    alg: 'HS256',
+    userId: YOUR_MERCHANT_ID
+  })
+  .setIssuedAt()
+  .setExpirationTime('24h')
+  .sign(secretKey);
+```
+
+The `userId` in the header is your merchant ID. If you don't know it, contact support or check your dashboard.
+
+<Info>
+Both methods produce identical tokens. The only difference is whether AssetPay's server or your server does the signing. Local generation saves one network call per user session.
+</Info>
+
+## Using the Token
+
+For all `/client/*` endpoints, pass the token in the `Authorization` header:
+
+```typescript
+headers: {
+  'Authorization': 'CLIENT_TOKEN_HERE'
+}
+```
+
+For API-key-authenticated endpoints (`/auth/authenticate-client`, `/secure/*`), use the `api-key` header instead:
+
+```typescript
+headers: {
+  'api-key': 'YOUR_API_KEY'
+}
+```
+
+## Security & Architecture
+
+Client tokens can be used directly from your frontend. You don't need to proxy every API call through your backend.
+
+This works because AssetPay protects your balance through **callbacks**, not through token restrictions:
+
+**Deposits** don't require any balance check from you. The user is sending you items, not taking them. Your backend gets notified via callbacks when the deposit completes, and you credit the user at that point.
+
+**Withdrawals** are protected by the INITIATED callback. When a user initiates a withdrawal, AssetPay sends a callback to your backend before purchasing anything. Your backend checks the user's balance, deducts it, and responds with `200` to approve. If the balance is insufficient, respond with a rejection and the trade is cancelled. Nothing gets purchased until your backend says so.
+
+This means the typical architecture looks like:
+
+<Steps>
+  <Step title="Frontend calls AssetPay directly">
+    The user's browser uses the client token to fetch inventory, browse the market, and initiate trades.
+  </Step>
+  <Step title="AssetPay calls your backend">
+    For withdrawals, AssetPay sends an `INITIATED` callback to your backend. Your backend validates the user's balance, deducts it, and responds with `200` to approve the purchase. To reject, respond with `{ "action": "reject" }`.
+  </Step>
+  <Step title="Your backend processes results">
+    As the trade progresses, your backend receives callbacks for each status change. Credit balances on `COMPLETED`, handle refunds on `FAILED` or `REVERTED`.
+  </Step>
+</Steps>
+
+<Info>
+You can also call AssetPay from your backend if you prefer. The client token works from both frontend and backend. The callback approval mechanism protects you either way.
+</Info>
+
+### What about the API key?
+
+Your API key (`ap_...`) should stay on your backend. It's used for merchant-level operations like authenticating clients and fetching prices. The client token is the one that's safe to expose to users.
+
+## API Key Scopes
+
+Your API key needs the `CORE_ACCESS` scope to authenticate clients, check trade URLs, and fetch prices. This is the default scope for new keys.
+
+Available scopes relevant to trading:
+
+| Scope | Grants access to |
+|-------|-----------------|
+| `CORE_ACCESS` | Client authentication, trade URL checks, price fetching |
+| `READ_ONLY` | All read-only endpoints |
+
+You can manage scopes and rotate keys from your dashboard.

@@ -1,0 +1,122 @@
+---
+title: "Market"
+description: "Browsing available items for withdrawal and market data."
+---
+
+# Market
+
+The market endpoints return items currently available for purchase. This is what you show users when they want to withdraw (buy) skins.
+
+## Fetching Market Items
+
+```http
+GET https://api.assetpay.co/client/market?game=730&page=1&perPage=50
+Authorization: CLIENT_TOKEN
+```
+
+Response:
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "e5f6g7h8-...",
+        "name": "AWP | Dragon Lore",
+        "marketHashName": "AWP | Dragon Lore (Factory New)",
+        "type": "Sniper Rifle",
+        "iconUrl": "IzMF03bk9WpSBq-S-ekoE33L-iLqGFHVaU25ZzQNQcXdEHOQ6UFc5FT_0NqFMOBBN-s...",
+        "appid": 730,
+        "contextid": 2,
+        "tradable": true,
+        "marketPrice": 1850.00,
+        "offer": {
+          "price": 1720.50,
+          "reference": "ref_market_456",
+          "delivery": "normal"
+        },
+        "exterior": "Factory New",
+        "wear": "0.01234",
+        "rarity": "Covert",
+        "color": "#EB4B4B",
+        "paintSeed": 661,
+        "stickers": [],
+        "charm": null
+      }
+    ],
+    "count": 1523
+  }
+}
+```
+
+## Query Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `game` | string | `730` | `"730"` for CS2 or `"252490"` for Rust |
+| `search` | string | - | Search by item name |
+| `sort` | string | - | `"popularity"`, `"price_asc"`, or `"price_desc"` |
+| `minPrice` | number | - | Minimum price filter (USD) |
+| `maxPrice` | number | - | Maximum price filter (USD) |
+| `page` | number | `1` | Page number |
+| `perPage` | number | `50` | Items per page. Use `-1` to get all items (ignores page). Max `1000`. |
+
+## Search Suggestions
+
+For building an autocomplete search box, use the suggestions endpoint:
+
+```http
+GET https://api.assetpay.co/client/market/suggestions?q=drag
+Authorization: CLIENT_TOKEN
+```
+
+This returns a lightweight list of matching item names, faster than a full market search.
+
+## Item Listings
+
+To get all available listings for a specific item type:
+
+```http
+GET https://api.assetpay.co/client/market/item?itemId=ITEM_ID&delivery=normal
+Authorization: CLIENT_TOKEN
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `itemId` | string | Required | The item's market hash name or ID |
+| `delivery` | string | `normal` | `"normal"` or `"auto"` delivery mode |
+| `page` | number | `1` | Page number |
+
+This returns individual listings with different float values, stickers, and prices for the same item type. Useful when you want to let users pick a specific skin rather than just the cheapest one.
+
+## Pricing in Market Items
+
+For market items (withdrawals), the `offer.price` is what it costs to buy this item. This is the amount that gets deducted from the merchant's wallet balance.
+
+The `delivery` field indicates how the item will be delivered:
+- `"normal"` - Standard delivery through a trade offer
+- `"auto"` - Automated delivery (typically faster)
+
+The `market` field (1, 2, or 3) indicates which marketplace source the item comes from. You'll need to pass this in the withdrawal request.
+
+## Keeping Prices Updated
+
+Market prices change frequently. You have two options to keep your UI current:
+
+1. **Polling**: Refetch market data periodically (every 30-60 seconds is reasonable)
+2. **WebSocket**: Subscribe to price update events for real-time changes (see [WebSocket](/guides/websocket))
+
+When a user clicks "Buy", always validate that the price hasn't changed since they last loaded the page. If it has, show them the updated price before proceeding.
+
+## Fetching Bulk Prices
+
+If you need pricing data without item details (for example, to update prices in your own database), use the `/secure/prices` endpoint with your API key:
+
+```http
+GET https://api.assetpay.co/secure/prices?game=730
+api-key: YOUR_API_KEY
+```
+
+This returns a compact list of market hash names with their current prices. See the [API Reference](/api-reference/secure/get-prices) for the full response format.

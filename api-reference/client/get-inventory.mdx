@@ -1,0 +1,108 @@
+---
+title: "Get Inventory"
+description: "Fetch a user's Steam inventory with live pricing."
+---
+
+# GET /client/inventory
+
+Returns the authenticated user's Steam inventory for a specific game, with offer prices and market prices attached.
+
+**Authentication:** Client Token (`Authorization` header)
+
+## Request
+
+```http
+GET https://api.assetpay.co/client/inventory?game=730&page=1&perPage=50
+Authorization: CLIENT_TOKEN
+```
+
+### Query Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `game` | number | `730` | Game app ID (`730` = CS2, `252490` = Rust) |
+| `refresh` | boolean | `false` | Force-refresh from Steam (bypasses 15-min cache) |
+| `search` | string | - | Filter by item name |
+| `sort` | string | - | Sort order |
+| `minPrice` | number | - | Minimum offer price (USD) |
+| `maxPrice` | number | - | Maximum offer price (USD) |
+| `page` | number | `1` | Page number |
+| `perPage` | number | `50` | Items per page |
+
+## Response
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": {
+    "inventory": [
+      {
+        "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "name": "AK-47 | Redline",
+        "marketHashName": "AK-47 | Redline (Field-Tested)",
+        "type": "Rifle",
+        "iconUrl": "IzMF03bk9WpSBq-S-ekoE33L-iLqGFHVaU25ZzQNQcXdA3g5gMEPvUZZEfSMJ6dESN8p_2SVTY7V2N4MxGVIwXpaL3_a3Hh...",
+        "appid": 730,
+        "contextid": 2,
+        "tradable": true,
+        "accepted": true,
+        "marketPrice": 12.50,
+        "offer": {
+          "price": 10.75,
+          "reference": "ref_abc123",
+          "maxAmount": 1
+        },
+        "exterior": "Field-Tested",
+        "wear": "0.25432",
+        "rarity": "Classified",
+        "color": "#D32CE6",
+        "paintSeed": 312,
+        "stickers": [
+          {
+            "name": "NaVi | Katowice 2019",
+            "slot": 0,
+            "wear": 0.05,
+            "iconUrl": "IzMF03bi9WpSBq-S-ekoE33L-iLqGFHVaU25Zzc..."
+          }
+        ]
+      }
+    ],
+    "count": 42,
+    "updatedAt": "2026-03-04T10:00:00.000Z",
+    "collateral": 150.00
+  }
+}
+```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `inventory` | [InventoryItem](/reference/types#inventoryitem)[] | Array of items with pricing |
+| `count` | number | Total items matching filters (for pagination) |
+| `updatedAt` | Date | When the inventory cache was last refreshed |
+| `collateral` | number | Available instant deposit collateral in USD |
+
+### Key Item Fields
+
+| Field | Description |
+|-------|-------------|
+| `offer.price` | What the user gets paid for depositing (USD) |
+| `offer.reference` | Must be passed back when initiating a deposit |
+| `marketPrice` | BUFF163 market reference price (USD). Not the trade price. |
+| `accepted` | `true` if the item can be deposited |
+
+## Rate Limits
+
+| Merchant Status | Limit |
+|----------------|-------|
+| Verified | 1,000 requests / min |
+| Unverified | 10 requests / min |
+
+## Errors
+
+| Code | Key | When |
+|------|-----|------|
+| 3 | `INVENTORY_FETCH_FAILED` | Steam inventory couldn't be loaded |
+| 1222 | `INVALID_TOKEN` | Client token is invalid or expired |
