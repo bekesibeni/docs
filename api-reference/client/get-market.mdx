@@ -56,8 +56,7 @@ Authorization: CLIENT_TOKEN
         "rarity": "Covert",
         "color": "#EB4B4B",
         "paintSeed": 42,
-        "stickers": [],
-        "market": 1
+        "stickers": []
       }
     ],
     "count": 1523
@@ -76,10 +75,10 @@ Authorization: CLIENT_TOKEN
 
 | Field | Description |
 |-------|-------------|
+| `id` | Pass back as `itemId` in the withdrawal request |
 | `offer.price` | Purchase cost in USD |
 | `offer.reference` | Must be passed in the withdrawal request |
 | `offer.delivery` | `"normal"` or `"auto"` delivery mode |
-| `market` | Marketplace source number (pass this in the withdrawal request) |
 
 ## Rate Limits
 

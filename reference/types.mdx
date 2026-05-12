@@ -97,19 +97,18 @@ interface InventoryItem {
   exterior?: string;             // "Factory New", "Minimal Wear", etc.
   rarity?: string;               // "Consumer Grade", "Covert", etc.
   color?: string;                // Rarity color hex (e.g. "#EB4B4B")
-  phase?: string;                // Doppler phase (if applicable)
   wear?: string;                 // Float value as string
-  fade?: string;                 // Fade percentage (if applicable)
-  hardened?: string;             // Case Hardened pattern info
   paintSeed?: number;            // Paint seed number
+  doppler?: Doppler;             // Doppler phase details
+  fade?: Fade;                   // Fade percentage details
+  hardened?: Hardened;           // Case Hardened pattern details
 
   // Applied items
   stickers?: Sticker[];          // Applied stickers
   charm?: Charm;                 // Applied charm (CS2 only)
 
-  // Withdrawal-specific
-  market?: number;               // Marketplace source (pass in withdraw request)
-  purchaseStatus?: ItemPurchaseStatus;  // Per-item purchase progress
+  // Withdrawal-specific (only set on items belonging to a withdraw trade)
+  status?: TradeStatus;          // Per-item purchase status, mirrors Trade.status
 }
 ```
 
@@ -117,7 +116,8 @@ interface InventoryItem {
 
 ```typescript
 interface Sticker {
-  name: string;                  // Sticker name
+  name: string;                  // Sticker display name
+  marketHashName?: string;       // Sticker's own market hash name, for deep-linking
   slot: number;                  // Position on the weapon (0-4)
   wear?: number;                 // Sticker wear (0 = perfect, 1 = scraped off)
   iconUrl: string;               // Sticker image URL
@@ -128,9 +128,43 @@ interface Sticker {
 
 ```typescript
 interface Charm {
-  name: string;                  // Charm name
+  name: string;                  // Charm display name
+  marketHashName?: string;       // Charm's own market hash name, for deep-linking
   pattern?: string;              // Pattern type
   iconUrl: string;               // Charm image URL
+}
+```
+
+## Doppler
+
+Present on doppler-pattern CS2 skins (Glock-18 Gamma Doppler, AWP Asiimov, etc.).
+
+```typescript
+interface Doppler {
+  status?: number;               // Marketplace-issued status code (market listings only)
+  name: string;                  // Phase name (e.g. "Phase 1", "Ruby", "Sapphire")
+  paintIndex?: number;           // Steam paint index, if known
+}
+```
+
+## Fade
+
+Present on fade skins (Karambit Fade, AWP Fade).
+
+```typescript
+interface Fade {
+  percentage: number;            // Fade percentage (0-100)
+}
+```
+
+## Hardened
+
+Present on Case Hardened skins.
+
+```typescript
+interface Hardened {
+  status: number;                // Case Hardened tier code
+  name: string;                  // Pattern name (e.g. "Blue Gem")
 }
 ```
 
@@ -149,6 +183,7 @@ type TradeStatus =
   | 'hold'        // 7-day Steam hold period
   | 'completed'   // Trade finished successfully
   | 'failed'      // Trade failed
+  | 'canceled'    // Trade was cancelled before being processed
   | 'reverted'    // Trade reversed after being active
   | 'partial';    // Some items succeeded, others didn't
 ```
@@ -169,29 +204,16 @@ type RevertedBy =
   | 'user';      // End user reversed
 ```
 
-### ItemPurchaseStatus
-
-Per-item status for withdrawal trades. Same values as `TradeStatus`.
+### GameId
 
 ```typescript
-type ItemPurchaseStatus =
-  | 'initiated'
-  | 'pending'
-  | 'active'
-  | 'hold'
-  | 'completed'
-  | 'failed'
-  | 'reverted';
-```
-
-### Games
-
-```typescript
-enum Games {
-  CS2  = '730',
-  RUST = '252490',
+enum GameId {
+  CS2  = 730,
+  RUST = 252490,
 }
 ```
+
+The `game` query parameter accepts the numeric value as either a string or number (e.g. `"730"` or `730`).
 
 ## Callback Payload
 

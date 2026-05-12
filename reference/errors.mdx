@@ -19,9 +19,65 @@ All errors follow this format:
 }
 ```
 
+Codes are grouped by domain:
+
+| Range | Domain |
+|-------|--------|
+| 1-99 | Trading / marketplace |
+| 1000-1099 | Generic / infrastructure |
+| 1100-1199 | Authentication / tokens |
+| 1200-1299 | Two-factor / passkeys |
+| 1300-1399 | Account / access control |
+| 1500-1599 | Idempotency |
+| 1900-1999 | API keys / secrets |
+| 2300-2399 | Identity verification |
+| 2400-2499 | Ledger integrity |
+
+## General Errors
+
+| Code | Key | HTTP | Description |
+|------|-----|------|-------------|
+| 1001 | `VALIDATION_FAILED` | 400 | Request body or query params failed validation |
+| 1003 | `NOT_FOUND` | 404 | Resource not found |
+| 1004 | `CONFLICT` | 409 | State conflict |
+| 1005 | `RATE_LIMITED` | 429 | Too many requests |
+| 1006 | `SERVER_ERROR` | 500 | Internal server error |
+| 1007 | `SYSTEM_MAINTENANCE` | 503 | System is in maintenance mode |
+| 1008 | `UNPROCESSABLE` | 422 | Request cannot be processed |
+| 1009 | `SERVICE_UNAVAILABLE` | 503 | Service temporarily unavailable |
+
+## Authentication Errors
+
+| Code | Key | HTTP | Description |
+|------|-----|------|-------------|
+| 1100 | `UNAUTHORIZED` | 401 | Authentication required |
+| 1101 | `INVALID_CREDENTIALS` | 401 | Invalid email/username or password |
+| 1102 | `INVALID_TOKEN` | 401 | Token is invalid |
+| 1108 | `MISSING_BEARER` | 401 | Authorization header missing or invalid |
+| 1110 | `TOKEN_INVALID_OR_EXPIRED` | 401 | Token is invalid or expired |
+| 1111 | `TOKEN_EXPIRED` | 401 | Token has expired |
+
+## Account / Access Errors
+
+| Code | Key | HTTP | Description |
+|------|-----|------|-------------|
+| 1300 | `FORBIDDEN` | 403 | You don't have permission to access this resource |
+| 1301 | `ACCOUNT_DISABLED` | 403 | Account has been disabled |
+
+## API Key Errors
+
+| Code | Key | HTTP | Description |
+|------|-----|------|-------------|
+| 1900 | `MISSING_API_KEY` | 401 | No `api-key` header provided |
+| 1901 | `INVALID_API_KEY` | 401 | API key not found or invalid |
+| 1902 | `API_KEY_REVOKED` | 403 | API key has been revoked |
+| 1903 | `API_KEY_SCOPE_DENIED` | 403 | API key doesn't have the required scope |
+| 1904 | `API_KEY_IP_DENIED` | 403 | Request IP is not in the key's whitelist |
+| 1908 | `INSUFFICIENT_SCOPE` | 403 | Insufficient scope permissions for this operation |
+
 ## Trading Errors
 
-These codes are returned when deposit or withdrawal requests fail.
+Returned by deposit, withdrawal, and inventory endpoints.
 
 | Code | Key | HTTP | Description |
 |------|-----|------|-------------|
@@ -37,46 +93,31 @@ These codes are returned when deposit or withdrawal requests fail.
 | 10 | `ITEMS_NOT_ACCEPTED` | 400 | Items are not accepted for deposit |
 | 11 | `PRICE_CHANGED` | 409 | Price has changed since you last fetched it |
 | 12 | `MERCHANT_BALANCE_LOW` | 400 | Merchant balance is too low for this withdrawal |
-| 14 | `INVALID_TRADEURL` | 400 | Invalid or inaccessible trade URL |
-| 15 | `LISTING_NOT_FOUND` | 404 | Marketplace listing not found |
-| 16 | `LISTING_PRICE_INVALID` | 400 | Listing has an invalid or missing price |
-| 17 | `INVALID_LISTING_ID` | 400 | Invalid listing ID format |
-| 18 | `DATABASE_ERROR` | 500 | Database error occurred |
-| 19 | `INSUFFICIENT_ITEM_AMOUNT` | 400 | Requested amount exceeds available quantity |
-| 20 | `EXCEEDS_MAX_AMOUNT` | 400 | Requested amount exceeds the maximum allowed |
-| 21 | `DEPOSIT_IN_PROGRESS` | 429 | A deposit is already processing for this user |
+| 13 | `INVALID_TRADEURL` | 400 | Invalid or inaccessible trade URL |
+| 14 | `LISTING_NOT_FOUND` | 404 | Marketplace listing not found |
+| 15 | `LISTING_PRICE_INVALID` | 400 | Listing has an invalid or missing price |
+| 16 | `INVALID_LISTING_ID` | 400 | Invalid listing ID format |
+| 17 | `INSUFFICIENT_ITEM_AMOUNT` | 400 | Requested amount exceeds available quantity |
+| 18 | `EXCEEDS_MAX_AMOUNT` | 400 | Requested amount exceeds the maximum allowed |
+| 19 | `DEPOSIT_IN_PROGRESS` | 429 | A deposit is already processing for this user |
 
-## General Errors
-
-| Code | Key | HTTP | Description |
-|------|-----|------|-------------|
-| 1000 | `SERVER_ERROR` | 500 | Internal server error |
-| 1001 | `VALIDATION_FAILED` | 400 | Request body or query params failed validation |
-| 1002 | `UNAUTHORIZED` | 401 | Authentication required |
-| 1003 | `FORBIDDEN` | 403 | Permission denied |
-| 1004 | `NOT_FOUND` | 404 | Resource not found |
-| 1005 | `CONFLICT` | 409 | State conflict |
-| 1006 | `UNPROCESSABLE` | 422 | Request cannot be processed |
-| 1007 | `RATE_LIMITED` | 429 | Too many requests |
-| 1008 | `SERVICE_UNAVAILABLE` | 503 | Service temporarily unavailable |
-| 1009 | `SYSTEM_MAINTENANCE` | 503 | System is in maintenance mode |
-
-## Authentication Errors
+## Identity Verification Errors
 
 | Code | Key | HTTP | Description |
 |------|-----|------|-------------|
-| 1220 | `MISSING_BEARER` | 401 | No authorization token provided |
-| 1222 | `INVALID_TOKEN` | 401 | Token is invalid or expired |
-
-## API Key Errors
-
-| Code | Key | HTTP | Description |
-|------|-----|------|-------------|
-| 1400 | `MISSING_API_KEY` | 401 | No `api-key` header provided |
-| 1401 | `INVALID_API_KEY` | 401 | API key not found or invalid |
-| 1402 | `API_KEY_REVOKED` | 403 | API key has been revoked |
-| 1403 | `API_KEY_SCOPE_DENIED` | 403 | API key doesn't have the required scope |
-| 1404 | `API_KEY_IP_DENIED` | 403 | Request IP is not in the key's whitelist |
+| 2300 | `VERIFICATION_NOT_AVAILABLE` | 503 | Identity verification is not available |
+| 2301 | `VERIFICATION_ALREADY_VERIFIED` | 409 | Account is already verified |
+| 2302 | `VERIFICATION_IN_PROGRESS` | 409 | A verification is already in progress |
+| 2303 | `VERIFICATION_PROCESS_NOT_FOUND` | 404 | Verification process not found |
+| 2304 | `VERIFICATION_BANNED_IDENTITY` | 403 | This identity cannot be verified |
+| 2305 | `VERIFICATION_ACCOUNT_CAP_REACHED` | 409 | Maximum linked accounts reached for this identity |
+| 2306 | `VERIFICATION_ALREADY_LINKED` | 409 | Account is already linked to an identity |
+| 2307 | `VERIFICATION_IDENTITY_NOT_FOUND` | 404 | Verified identity not found |
+| 2308 | `VERIFICATION_SIGNICAT_ERROR` | 502 | Verification provider returned an error |
+| 2309 | `VERIFICATION_WEBHOOK_SIGNATURE_INVALID` | 401 | Verification webhook signature is invalid |
+| 2310 | `VERIFICATION_EMAIL_REQUIRED` | 400 | Email is required to link an existing identity |
+| 2311 | `VERIFICATION_NOT_LINKED` | 404 | Account does not have a linked identity |
+| 2312 | `VERIFICATION_LINK_FAILED` | 400 | Unable to link identity to this account |
 
 ## Handling Errors
 

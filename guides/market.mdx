@@ -10,7 +10,7 @@ The market endpoints return items currently available for purchase. This is what
 ## Fetching Market Items
 
 ```http
-GET https://api.assetpay.gg/client/market?game=730&page=1&perPage=50
+GET https://api.assetpay.gg/client/market?game=730&page=1&limit=50
 Authorization: CLIENT_TOKEN
 ```
 
@@ -61,7 +61,7 @@ Response:
 | `minPrice` | number | - | Minimum price filter (USD) |
 | `maxPrice` | number | - | Maximum price filter (USD) |
 | `page` | number | `1` | Page number |
-| `perPage` | number | `50` | Items per page. Use `-1` to get all items (ignores page). Max `1000`. |
+| `limit` | number | `50` | Items per page. Use `-1` to get all items (ignores page). Max `1000`. |
 
 ## Search Suggestions
 
@@ -99,7 +99,7 @@ The `delivery` field indicates how the item will be delivered:
 - `"normal"` - Standard delivery through a trade offer
 - `"auto"` - Automated delivery (typically faster)
 
-The `market` field (1, 2, or 3) indicates which marketplace source the item comes from. You'll need to pass this in the withdrawal request.
+Pass the item's `id`, `offer.price`, and `offer.reference` when initiating the withdrawal. AssetPay routes the purchase to the correct marketplace supplier internally.
 
 ## Keeping Prices Updated
 

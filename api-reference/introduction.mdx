@@ -89,7 +89,7 @@ Rate limits vary by endpoint and merchant verification status:
 
 Rate limits are shared across all clients of the same merchant. If you have 100 users hitting the inventory endpoint, they all share the same 1,000/min bucket.
 
-When you hit a rate limit, you'll receive a `429` response with error code `1007` (`RATE_LIMITED`).
+When you hit a rate limit, you'll receive a `429` response with error code `1005` (`RATE_LIMITED`).
 
 ## Versioning
 

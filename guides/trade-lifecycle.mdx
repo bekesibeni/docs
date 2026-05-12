@@ -17,6 +17,7 @@ Every trade follows a state machine. Understanding the status transitions is cri
 | `escrow` | Steam 2FA escrow period active (user doesn't have mobile authenticator set up for 7+ days) |
 | `hold` | 7-day trade hold period (Steam's reversal protection) |
 | `completed` | Trade finished successfully |
+| `canceled` | Trade was cancelled before being processed (e.g. merchant rejected the `initiated` callback) |
 | `failed` | Trade failed at some point in the process |
 | `reverted` | A previously active/held trade was reversed |
 | `partial` | Some items in a multi-item trade succeeded, others didn't |
@@ -115,7 +116,7 @@ When a trade reaches `reverted`, the `revertedBy` field tells you who caused it:
 | Value | Meaning |
 |-------|---------|
 | `supplier` | The marketplace supplier reversed the trade |
-| `USER` | The end user reversed the trade |
+| `user` | The end user reversed the trade |
 
 For deposits, reversals typically happen during the hold period when Steam reverses the trade. For withdrawals, either party can reverse after acceptance.
 
@@ -147,6 +148,7 @@ You probably don't want to expose all internal statuses to your users. Here's a 
 | `escrow` | Escrow Hold | Waiting for Steam escrow to clear |
 | `hold` | Held (7 days) | Item held for Steam's protection period |
 | `completed` | Completed | Trade finished |
+| `canceled` | Cancelled | Trade was cancelled before processing |
 | `failed` | Failed | Trade didn't go through |
 | `reverted` | Reversed | Trade was reversed |
 | `partial` | Partially Completed | Some items were traded |

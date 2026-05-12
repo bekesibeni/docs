@@ -20,7 +20,6 @@ Authorization: CLIENT_TOKEN
   "items": [
     {
       "itemId": "e5f6g7h8-i9j0-1234-abcd-ef5678901234",
-      "market": 1,
       "offer": {
         "price": 45.00,
         "reference": "ref_market_789"
@@ -38,7 +37,6 @@ Authorization: CLIENT_TOKEN
 |-----------|------|----------|-------------|
 | `items` | array | Yes | Items to withdraw (min 1, max 50) |
 | `items[].itemId` | string | Yes | Item ID from market data (5-256 chars) |
-| `items[].market` | number | Yes | Marketplace source (from the item's `market` field) |
 | `items[].offer.price` | number | Yes | Purchase price in USD (max \$100,000) |
 | `items[].offer.reference` | string | Yes | Offer reference from market data (1-256 chars) |
 | `game` | string | No | `"730"` or `"252490"`. Defaults to `"730"`. |
@@ -75,8 +73,7 @@ Authorization: CLIENT_TOKEN
           "reference": "ref_market_789",
           "delivery": "normal"
         },
-        "market": 1,
-        "purchaseStatus": "initiated"
+        "status": "initiated"
       }
     ],
     "totalPrice": 45.00,
@@ -86,7 +83,7 @@ Authorization: CLIENT_TOKEN
 }
 ```
 
-The response is a full [ITrade](/reference/types#itrade) object. Withdrawal items include `market` and `purchaseStatus` fields.
+The response is a full [ITrade](/reference/types#itrade) object. Each withdrawal item carries its own `status` field that mirrors the trade-level status as it progresses.
 
 ## How Balance Approval Works
 
@@ -111,7 +108,7 @@ Shared across all clients of the same merchant.
 | 9 | `ITEMS_UNAVAILABLE` | Items no longer available on market |
 | 11 | `PRICE_CHANGED` | Offer price changed since fetch |
 | 12 | `MERCHANT_BALANCE_LOW` | Your merchant balance can't cover this withdrawal |
-| 14 | `INVALID_TRADEURL` | User's trade URL is invalid |
-| 15 | `LISTING_NOT_FOUND` | Marketplace listing not found |
-| 16 | `LISTING_PRICE_INVALID` | Listing has invalid price |
-| 17 | `INVALID_LISTING_ID` | Invalid listing ID format |
+| 13 | `INVALID_TRADEURL` | User's trade URL is invalid |
+| 14 | `LISTING_NOT_FOUND` | Marketplace listing not found |
+| 15 | `LISTING_PRICE_INVALID` | Listing has invalid price |
+| 16 | `INVALID_LISTING_ID` | Invalid listing ID format |

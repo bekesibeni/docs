@@ -46,7 +46,6 @@ Authorization: CLIENT_TOKEN
   "items": [
     {
       "itemId": "e5f6g7h8-...",
-      "market": 1,
       "offer": {
         "price": 45.00,
         "reference": "ref_market_789"
@@ -64,7 +63,6 @@ Authorization: CLIENT_TOKEN
 |-------|------|----------|-------------|
 | `items` | array | Yes | Array of items to withdraw (min 1, max 50) |
 | `items[].itemId` | string | Yes | Item ID from the market response |
-| `items[].market` | number | Yes | Marketplace source (from the item's `market` field) |
 | `items[].offer.price` | number | Yes | The offer price in USD (max \$100,000) |
 | `items[].offer.reference` | string | Yes | The offer reference from market data |
 | `game` | string | No | `"730"` (CS2) or `"252490"` (Rust). Defaults to `"730"`. |
@@ -91,8 +89,7 @@ Authorization: CLIENT_TOKEN
           "price": 45.00,
           "reference": "ref_market_789"
         },
-        "market": 1,
-        "purchaseStatus": "initiated"
+        "status": "initiated"
       }
     ],
     "totalPrice": 45.00,
@@ -157,9 +154,9 @@ In rare cases, a completed withdrawal can be reversed. This happens when either 
 
 When a withdrawal is reverted, your merchant wallet is automatically refunded by AssetPay.
 
-## Per-Item Purchase Status
+## Per-Item Status
 
-For multi-item withdrawals, each item in the `items` array has its own `purchaseStatus` field:
+For multi-item withdrawals, each item in the `items` array carries its own `status` field. It uses the same values as the trade-level [TradeStatus](/reference/types#tradestatus) and mirrors how the individual purchase progresses:
 
 | Status | Meaning |
 |--------|---------|

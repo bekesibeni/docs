@@ -60,9 +60,9 @@ api-key: YOUR_API_KEY
   "data": [
     {
       "marketHashName": "Large Wood Box",
-      "overstockLimit": 100,
-      "depositPrice": 0.12,
-      "withdrawPrice": 0.18
+      "accepted": true,
+      "price": 0.12,
+      "maxAmount": 100
     }
   ]
 }
@@ -73,9 +73,9 @@ api-key: YOUR_API_KEY
 | Field | Type | Description |
 |-------|------|-------------|
 | `marketHashName` | string | Item's market hash name |
-| `overstockLimit` | number | Maximum quantity accepted |
-| `depositPrice` | number | Price paid for deposits (USD) |
-| `withdrawPrice` | number | Price charged for withdrawals (USD) |
+| `accepted` | boolean | Whether the item is currently accepted for trading |
+| `price` | number | Current offer price per unit (USD) |
+| `maxAmount` | number | Maximum stack amount accepted in a single trade |
 
 ## Rate Limits
 
