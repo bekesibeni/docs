@@ -20,23 +20,23 @@ A deposit is when a user sells their skin to your platform. The user sends their
     Call `POST /client/trading/deposit` with the selected items, their offer prices, and references.
   </Step>
   <Step title="Trade offer sent">
-    AssetPay automatically sends a Steam trade offer to the user. The trade moves to `PENDING`.
+    AssetPay automatically sends a Steam trade offer to the user. The trade moves to `pending`.
   </Step>
   <Step title="User accepts">
-    The user accepts the trade offer in Steam. The trade moves to `ACTIVE`, then `HOLD`.
+    The user accepts the trade offer in Steam. The trade moves to `active`, then `hold`.
   </Step>
   <Step title="Hold period (CS2 only)">
-    For CS2, Steam enforces a 7-day trade protection period. The trade stays in `HOLD` until it ends. Rust trades skip this step entirely and go straight to `COMPLETED`.
+    For CS2, Steam enforces a 7-day trade protection period. The trade stays in `hold` until it ends. Rust trades skip this step entirely and go straight to `completed`.
   </Step>
   <Step title="Completed">
-    After the hold period (CS2) or immediately after acceptance (Rust), the trade reaches `COMPLETED`. You receive a callback and credit the user's balance.
+    After the hold period (CS2) or immediately after acceptance (Rust), the trade reaches `completed`. You receive a callback and credit the user's balance.
   </Step>
 </Steps>
 
 ## Single-Item Deposit
 
 ```http
-POST https://api.assetpay.co/client/trading/deposit
+POST https://api.assetpay.gg/client/trading/deposit
 Content-Type: application/json
 Authorization: CLIENT_TOKEN
 
@@ -60,7 +60,7 @@ Authorization: CLIENT_TOKEN
 You can deposit multiple items in a single trade. Pass them all in the `items` array:
 
 ```http
-POST https://api.assetpay.co/client/trading/deposit
+POST https://api.assetpay.gg/client/trading/deposit
 Content-Type: application/json
 Authorization: CLIENT_TOKEN
 
@@ -123,8 +123,8 @@ The response contains the full trade object:
   "success": true,
   "data": {
     "id": "trade-uuid",
-    "type": "DEPOSIT",
-    "status": "INITIATED",
+    "type": "deposit",
+    "status": "initiated",
     "game": "730",
     "externalId": "dep_unique_123",
     "merchantId": "merchant-uuid",
@@ -144,13 +144,13 @@ The response contains the full trade object:
 
 By default, `isInstant` is `true`. When enabled, AssetPay calculates how much of the deposit value can be credited instantly based on collateral, rather than waiting for the full 7-day hold period.
 
-When a deposit enters `HOLD` status, the trade object includes:
+When a deposit enters `hold` status, the trade object includes:
 
 - `preCredit` - the amount credited instantly (USD)
 - `pendingCredit` - the remaining amount held until the hold period ends
 - `collateral` - breakdown of collateral sources
 
-If `isInstant` is set to `false`, the entire amount waits until `COMPLETED`.
+If `isInstant` is set to `false`, the entire amount waits until `completed`.
 
 The `collateral` field in the inventory response tells you the total instant credit available for that user before they start depositing.
 
@@ -168,17 +168,17 @@ External IDs must be unique per trade. Reusing an ID will result in an `EXTERNAL
 
 | Event | Action |
 |-------|--------|
-| `HOLD` | Credit `preCredit` amount (if using instant deposits) |
-| `COMPLETED` | Credit `pendingCredit` (the remaining held amount) |
-| `REVERTED` | Reverse any instant credit that was applied |
+| `hold` | Credit `preCredit` amount (if using instant deposits) |
+| `completed` | Credit `pendingCredit` (the remaining held amount) |
+| `reverted` | Reverse any instant credit that was applied |
 
 **When NOT to credit:**
 
 | Event | Action |
 |-------|--------|
-| `INITIATED` | Just acknowledge |
-| `PENDING` | Just acknowledge |
-| `ACTIVE` | Just acknowledge |
-| `FAILED` | No credit needed |
+| `initiated` | Just acknowledge |
+| `pending` | Just acknowledge |
+| `active` | Just acknowledge |
+| `failed` | No credit needed |
 
 See the [Callbacks](/guides/callbacks) guide for full details on processing each event.

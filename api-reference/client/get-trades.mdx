@@ -12,7 +12,7 @@ Returns the trade history for the authenticated client. Supports filtering by ty
 ## Request
 
 ```http
-GET https://api.assetpay.co/client/trades?type=DEPOSIT&game=730&page=1&limit=10
+GET https://api.assetpay.gg/client/trades?type=deposit&game=730&page=1&limit=10
 Authorization: CLIENT_TOKEN
 ```
 
@@ -20,7 +20,7 @@ Authorization: CLIENT_TOKEN
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `type` | string | - | Filter by `"DEPOSIT"` or `"WITHDRAW"` |
+| `type` | string | - | Filter by `"deposit"` or `"withdraw"` |
 | `game` | string | `730` | Game app ID |
 | `page` | number | `1` | Page number |
 | `limit` | number | `10` | Trades per page |
@@ -32,11 +32,11 @@ Authorization: CLIENT_TOKEN
   "requestId": "...",
   "success": true,
   "data": {
-    "trades": [
+    "items": [
       {
         "id": "trade-uuid",
-        "type": "DEPOSIT",
-        "status": "COMPLETED",
+        "type": "deposit",
+        "status": "completed",
         "game": "730",
         "externalId": "dep_123",
         "merchantId": "merchant-uuid",
@@ -63,7 +63,12 @@ Authorization: CLIENT_TOKEN
         "updatedAt": "2026-03-11T10:00:00.000Z"
       }
     ],
-    "count": 156
+    "pagination": {
+      "page": 1,
+      "limit": 10,
+      "total": 156,
+      "totalPages": 16
+    }
   }
 }
 ```
@@ -72,8 +77,11 @@ Authorization: CLIENT_TOKEN
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `trades` | [ITrade](/reference/types#itrade)[] | Array of trade objects |
-| `count` | number | Total trades matching filters |
+| `items` | [ITrade](/reference/types#itrade)[] | Array of trade objects |
+| `pagination.page` | number | Current page (1-indexed) |
+| `pagination.limit` | number | Items per page |
+| `pagination.total` | number | Total trades matching filters |
+| `pagination.totalPages` | number | Total page count |
 
 ## Rate Limits
 

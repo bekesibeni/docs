@@ -1,0 +1,56 @@
+---
+title: "Link Verified Identity"
+description: "Link a Steam account to an existing verified identity via email."
+---
+
+# POST /client/verification/link
+
+Links the authenticated client to an existing verified identity by matching the email set on the client record. Use this when a user has multiple Steam accounts — one document scan covers all of them.
+
+**Authentication:** Client Token (`Authorization` header)
+
+## Request
+
+No body. The identity is looked up automatically by the client's email address (set during `POST /client/verification/start`).
+
+```http
+POST https://api.assetpay.gg/client/verification/link
+Authorization: CLIENT_TOKEN
+```
+
+## Requirements
+
+- The client must have an email set on their account (provided during `/start`).
+- A verified identity with a matching email must exist (case-insensitive).
+- The identity must not be banned.
+- The identity must not have reached its maximum linked account limit (default 10).
+
+On success, the client's `verificationLevel` is immediately set to `1`.
+
+## Response
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": {
+    "linked": true
+  }
+}
+```
+
+## Trust Cascade
+
+Linking is also a security mechanism. If any linked account triggers a deposit reversal, the trust factor is destroyed on **every** account tied to the same identity. This is by design — it's what makes raising instant credit caps safe.
+
+## Errors
+
+| Code | Key | When |
+|------|-----|------|
+| 1501 | `VERIFICATION_ALREADY_VERIFIED` | Client is already at level 1 |
+| 1504 | `VERIFICATION_BANNED_IDENTITY` | The matched identity is banned |
+| 1505 | `VERIFICATION_ACCOUNT_CAP_REACHED` | Identity has reached its max-linked-accounts limit |
+| 1506 | `VERIFICATION_ALREADY_LINKED` | Client is already linked to an identity |
+| 1507 | `VERIFICATION_LINK_FAILED` | No verified identity matches the email |
+| 1510 | `VERIFICATION_EMAIL_REQUIRED` | No email on the client — pass one in `/start` first |
+| 1222 | `INVALID_TOKEN` | Client token is invalid or expired |

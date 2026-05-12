@@ -12,7 +12,7 @@ Initiates a withdrawal (buy) trade. AssetPay purchases the item from a marketpla
 ## Request
 
 ```http
-POST https://api.assetpay.co/client/trading/withdraw
+POST https://api.assetpay.gg/client/trading/withdraw
 Content-Type: application/json
 Authorization: CLIENT_TOKEN
 
@@ -52,8 +52,8 @@ Authorization: CLIENT_TOKEN
   "success": true,
   "data": {
     "id": "trade-uuid",
-    "type": "WITHDRAW",
-    "status": "INITIATED",
+    "type": "withdraw",
+    "status": "initiated",
     "game": "730",
     "externalId": "wd_unique_789",
     "merchantId": "merchant-uuid",
@@ -76,7 +76,7 @@ Authorization: CLIENT_TOKEN
           "delivery": "normal"
         },
         "market": 1,
-        "purchaseStatus": "INITIATED"
+        "purchaseStatus": "initiated"
       }
     ],
     "totalPrice": 45.00,
@@ -90,7 +90,7 @@ The response is a full [ITrade](/reference/types#itrade) object. Withdrawal item
 
 ## How Balance Approval Works
 
-After this endpoint is called, AssetPay sends an `INITIATED` callback to your backend **before purchasing anything**. Your backend checks the user's balance, deducts it, and responds with `200` to approve. If the balance is insufficient, respond with `4xx` (e.g. `402 Payment Required`) to reject the trade. See the [Withdrawals guide](/guides/withdrawals#the-initiated-callback) for details.
+After this endpoint is called, AssetPay sends an `initiated` callback to your backend **before purchasing anything**. Your backend checks the user's balance, deducts it, and responds with `200` to approve. If the balance is insufficient, respond with `4xx` (e.g. `402 Payment Required`) to reject the trade. See the [Withdrawals guide](/guides/withdrawals#the-initiated-callback) for details.
 
 ## Rate Limits
 

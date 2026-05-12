@@ -1,0 +1,57 @@
+---
+title: "Start Verification"
+description: "Initiate a Signicat PictureID verification (document + selfie)."
+---
+
+# POST /client/verification/start
+
+Starts a Signicat PictureID verification for the authenticated client. Returns a `captureUrl` the user must open to scan their document and take a selfie.
+
+**Authentication:** Client Token (`Authorization` header)
+
+## Request
+
+```http
+POST https://api.assetpay.gg/client/verification/start
+Content-Type: application/json
+Authorization: CLIENT_TOKEN
+
+{
+  "email": "user@example.com"
+}
+```
+
+### Body Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `email` | string | No | Email associated with the user. Recommended — required later for multi-account linking via `/client/verification/link`. |
+
+## Response
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": {
+    "captureUrl": "https://capture.signicat.com/...",
+    "dossierId": "dossier-uuid"
+  }
+}
+```
+
+Open `captureUrl` in the user's browser or webview. After they complete the capture, AssetPay receives a webhook from Signicat and updates the client's `verificationLevel`.
+
+## Limits
+
+- Only one active process per user. A new call within 30 minutes of an unfinished process returns `VERIFICATION_IN_PROGRESS`.
+- Already-verified clients (`verificationLevel >= 1`) get `VERIFICATION_ALREADY_VERIFIED`.
+
+## Errors
+
+| Code | Key | When |
+|------|-----|------|
+| 1500 | `VERIFICATION_NOT_AVAILABLE` | Signicat credentials not configured for this environment |
+| 1501 | `VERIFICATION_ALREADY_VERIFIED` | Client is already at level 1 |
+| 1502 | `VERIFICATION_IN_PROGRESS` | An active process exists from the last 30 minutes |
+| 1222 | `INVALID_TOKEN` | Client token is invalid or expired |

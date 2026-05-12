@@ -12,7 +12,7 @@ Initiates a deposit (sell) trade. The user's items are sent via Steam trade offe
 ## Request
 
 ```http
-POST https://api.assetpay.co/client/trading/deposit
+POST https://api.assetpay.gg/client/trading/deposit
 Content-Type: application/json
 Authorization: CLIENT_TOKEN
 
@@ -54,8 +54,8 @@ Authorization: CLIENT_TOKEN
   "success": true,
   "data": {
     "id": "trade-uuid",
-    "type": "DEPOSIT",
-    "status": "INITIATED",
+    "type": "deposit",
+    "status": "initiated",
     "game": "730",
     "externalId": "dep_unique_123",
     "merchantId": "merchant-uuid",

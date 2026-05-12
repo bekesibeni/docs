@@ -2,12 +2,17 @@
   "openapi": "3.1.0",
   "info": {
     "title": "AssetPay Public API",
-    "version": "0.5.3",
-    "description": "Public trading API - skin deposits, withdrawals, pricing, and client endpoints."
+    "version": "0.6.0",
+    "description": "Public trading API - skin deposits, withdrawals, pricing, client endpoints, and identity verification."
   },
   "servers": [
     {
-      "url": "https://api.assetpay.co"
+      "url": "https://api.assetpay.gg",
+      "description": "Production"
+    },
+    {
+      "url": "https://api-staging.assetpay.gg",
+      "description": "Staging"
     }
   ],
   "tags": [
@@ -768,7 +773,7 @@
               "default": 50
             },
             "required": false,
-            "name": "perPage",
+            "name": "limit",
             "in": "query"
           },
           {
@@ -801,7 +806,7 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "data": {
+                        "items": {
                           "type": "array",
                           "items": {
                             "anyOf": [
@@ -830,21 +835,21 @@
                                   "marketHashName": {
                                     "type": "string"
                                   },
-                                  "overstockLimit": {
+                                  "accepted": {
+                                    "type": "boolean"
+                                  },
+                                  "price": {
                                     "type": "number"
                                   },
-                                  "depositPrice": {
-                                    "type": "number"
-                                  },
-                                  "withdrawPrice": {
+                                  "maxAmount": {
                                     "type": "number"
                                   }
                                 },
                                 "required": [
                                   "marketHashName",
-                                  "overstockLimit",
-                                  "depositPrice",
-                                  "withdrawPrice"
+                                  "accepted",
+                                  "price",
+                                  "maxAmount"
                                 ]
                               }
                             ]
@@ -856,7 +861,7 @@
                             "page": {
                               "type": "integer"
                             },
-                            "perPage": {
+                            "limit": {
                               "type": "integer"
                             },
                             "total": {
@@ -868,14 +873,14 @@
                           },
                           "required": [
                             "page",
-                            "perPage",
+                            "limit",
                             "total",
                             "totalPages"
                           ]
                         }
                       },
                       "required": [
-                        "data",
+                        "items",
                         "pagination"
                       ]
                     }
@@ -1220,7 +1225,7 @@
               "default": 50
             },
             "required": false,
-            "name": "perPage",
+            "name": "limit",
             "in": "query"
           }
         ],
@@ -1288,21 +1293,8 @@
                                 "description": "BUFF163 market price in USD"
                               },
                               "sourcingPrice": {
-                                "type": "object",
-                                "properties": {
-                                  "source": {
-                                    "type": "number",
-                                    "description": "Price without fee in USD"
-                                  },
-                                  "withFee": {
-                                    "type": "number",
-                                    "description": "Price with fee in USD"
-                                  }
-                                },
-                                "required": [
-                                  "source",
-                                  "withFee"
-                                ]
+                                "type": "number",
+                                "description": "Marketplace fee-inclusive sourcing price in USD"
                               },
                               "offer": {
                                 "type": "object",
@@ -1394,20 +1386,21 @@
                                   "iconUrl"
                                 ]
                               },
-                              "market": {
-                                "type": "integer"
-                              },
-                              "purchaseStatus": {
+                              "status": {
                                 "type": "string",
                                 "enum": [
-                                  "INITIATED",
-                                  "PENDING",
-                                  "ACTIVE",
-                                  "HOLD",
-                                  "COMPLETED",
-                                  "FAILED",
-                                  "REVERTED"
-                                ]
+                                  "initiated",
+                                  "pending",
+                                  "active",
+                                  "hold",
+                                  "completed",
+                                  "failed",
+                                  "canceled",
+                                  "reverted",
+                                  "escrow",
+                                  "partial"
+                                ],
+                                "description": "Per-item status (withdrawals only)"
                               }
                             },
                             "required": [
@@ -1693,7 +1686,7 @@
     "/client/trades": {
       "get": {
         "summary": "Get client trade history",
-        "description": "Returns the authenticated client's trade history with pagination. Can be filtered by trade type (DEPOSIT/WITHDRAW) and game.",
+        "description": "Returns the authenticated client's trade history with pagination. Can be filtered by trade type (`deposit`/`withdraw`) and game.",
         "tags": [
           "Client"
         ],
@@ -1727,8 +1720,8 @@
             "schema": {
               "type": "string",
               "enum": [
-                "DEPOSIT",
-                "WITHDRAW"
+                "deposit",
+                "withdraw"
               ]
             },
             "required": false,
@@ -1766,7 +1759,7 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "trades": {
+                        "items": {
                           "type": "array",
                           "items": {
                             "type": "object",
@@ -1777,8 +1770,8 @@
                               "type": {
                                 "type": "string",
                                 "enum": [
-                                  "DEPOSIT",
-                                  "WITHDRAW"
+                                  "deposit",
+                                  "withdraw"
                                 ]
                               },
                               "externalId": {
@@ -1805,15 +1798,16 @@
                               "status": {
                                 "type": "string",
                                 "enum": [
-                                  "INITIATED",
-                                  "PENDING",
-                                  "ACTIVE",
-                                  "HOLD",
-                                  "COMPLETED",
-                                  "FAILED",
-                                  "REVERTED",
-                                  "ESCROW",
-                                  "PARTIAL"
+                                  "initiated",
+                                  "pending",
+                                  "active",
+                                  "hold",
+                                  "completed",
+                                  "failed",
+                                  "canceled",
+                                  "reverted",
+                                  "escrow",
+                                  "partial"
                                 ]
                               },
                               "game": {
@@ -1862,21 +1856,8 @@
                                       "description": "BUFF163 market price in USD"
                                     },
                                     "sourcingPrice": {
-                                      "type": "object",
-                                      "properties": {
-                                        "source": {
-                                          "type": "number",
-                                          "description": "Price without fee in USD"
-                                        },
-                                        "withFee": {
-                                          "type": "number",
-                                          "description": "Price with fee in USD"
-                                        }
-                                      },
-                                      "required": [
-                                        "source",
-                                        "withFee"
-                                      ]
+                                      "type": "number",
+                                      "description": "Marketplace fee-inclusive sourcing price in USD"
                                     },
                                     "offer": {
                                       "type": "object",
@@ -1968,20 +1949,21 @@
                                         "iconUrl"
                                       ]
                                     },
-                                    "market": {
-                                      "type": "integer"
-                                    },
-                                    "purchaseStatus": {
+                                    "status": {
                                       "type": "string",
                                       "enum": [
-                                        "INITIATED",
-                                        "PENDING",
-                                        "ACTIVE",
-                                        "HOLD",
-                                        "COMPLETED",
-                                        "FAILED",
-                                        "REVERTED"
-                                      ]
+                                        "initiated",
+                                        "pending",
+                                        "active",
+                                        "hold",
+                                        "completed",
+                                        "failed",
+                                        "canceled",
+                                        "reverted",
+                                        "escrow",
+                                        "partial"
+                                      ],
+                                      "description": "Per-item status (withdrawals only)"
                                     }
                                   },
                                   "required": [
@@ -2034,8 +2016,8 @@
                               "revertedBy": {
                                 "type": "string",
                                 "enum": [
-                                  "SUPPLIER",
-                                  "USER"
+                                  "supplier",
+                                  "user"
                                 ]
                               },
                               "botInfo": {
@@ -2091,13 +2073,33 @@
                             ]
                           }
                         },
-                        "count": {
-                          "type": "integer"
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "page": {
+                              "type": "integer"
+                            },
+                            "limit": {
+                              "type": "integer"
+                            },
+                            "total": {
+                              "type": "integer"
+                            },
+                            "totalPages": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "page",
+                            "limit",
+                            "total",
+                            "totalPages"
+                          ]
                         }
                       },
                       "required": [
-                        "trades",
-                        "count"
+                        "items",
+                        "pagination"
                       ]
                     }
                   },
@@ -2428,7 +2430,7 @@
               "default": 50
             },
             "required": false,
-            "name": "perPage",
+            "name": "limit",
             "in": "query"
           },
           {
@@ -2509,21 +2511,8 @@
                                 "description": "BUFF163 market price in USD"
                               },
                               "sourcingPrice": {
-                                "type": "object",
-                                "properties": {
-                                  "source": {
-                                    "type": "number",
-                                    "description": "Price without fee in USD"
-                                  },
-                                  "withFee": {
-                                    "type": "number",
-                                    "description": "Price with fee in USD"
-                                  }
-                                },
-                                "required": [
-                                  "source",
-                                  "withFee"
-                                ]
+                                "type": "number",
+                                "description": "Marketplace fee-inclusive sourcing price in USD"
                               },
                               "offer": {
                                 "type": "object",
@@ -2615,20 +2604,21 @@
                                   "iconUrl"
                                 ]
                               },
-                              "market": {
-                                "type": "integer"
-                              },
-                              "purchaseStatus": {
+                              "status": {
                                 "type": "string",
                                 "enum": [
-                                  "INITIATED",
-                                  "PENDING",
-                                  "ACTIVE",
-                                  "HOLD",
-                                  "COMPLETED",
-                                  "FAILED",
-                                  "REVERTED"
-                                ]
+                                  "initiated",
+                                  "pending",
+                                  "active",
+                                  "hold",
+                                  "completed",
+                                  "failed",
+                                  "canceled",
+                                  "reverted",
+                                  "escrow",
+                                  "partial"
+                                ],
+                                "description": "Per-item status (withdrawals only)"
                               }
                             },
                             "required": [
@@ -3305,21 +3295,8 @@
                             "description": "BUFF163 market price in USD"
                           },
                           "sourcingPrice": {
-                            "type": "object",
-                            "properties": {
-                              "source": {
-                                "type": "number",
-                                "description": "Price without fee in USD"
-                              },
-                              "withFee": {
-                                "type": "number",
-                                "description": "Price with fee in USD"
-                              }
-                            },
-                            "required": [
-                              "source",
-                              "withFee"
-                            ]
+                            "type": "number",
+                            "description": "Marketplace fee-inclusive sourcing price in USD"
                           },
                           "offer": {
                             "type": "object",
@@ -3411,20 +3388,21 @@
                               "iconUrl"
                             ]
                           },
-                          "market": {
-                            "type": "integer"
-                          },
-                          "purchaseStatus": {
+                          "status": {
                             "type": "string",
                             "enum": [
-                              "INITIATED",
-                              "PENDING",
-                              "ACTIVE",
-                              "HOLD",
-                              "COMPLETED",
-                              "FAILED",
-                              "REVERTED"
-                            ]
+                              "initiated",
+                              "pending",
+                              "active",
+                              "hold",
+                              "completed",
+                              "failed",
+                              "canceled",
+                              "reverted",
+                              "escrow",
+                              "partial"
+                            ],
+                            "description": "Per-item status (withdrawals only)"
                           }
                         },
                         "required": [
@@ -3794,8 +3772,8 @@
                         "type": {
                           "type": "string",
                           "enum": [
-                            "DEPOSIT",
-                            "WITHDRAW"
+                            "deposit",
+                            "withdraw"
                           ]
                         },
                         "externalId": {
@@ -3822,15 +3800,16 @@
                         "status": {
                           "type": "string",
                           "enum": [
-                            "INITIATED",
-                            "PENDING",
-                            "ACTIVE",
-                            "HOLD",
-                            "COMPLETED",
-                            "FAILED",
-                            "REVERTED",
-                            "ESCROW",
-                            "PARTIAL"
+                            "initiated",
+                            "pending",
+                            "active",
+                            "hold",
+                            "completed",
+                            "failed",
+                            "canceled",
+                            "reverted",
+                            "escrow",
+                            "partial"
                           ]
                         },
                         "game": {
@@ -3879,21 +3858,8 @@
                                 "description": "BUFF163 market price in USD"
                               },
                               "sourcingPrice": {
-                                "type": "object",
-                                "properties": {
-                                  "source": {
-                                    "type": "number",
-                                    "description": "Price without fee in USD"
-                                  },
-                                  "withFee": {
-                                    "type": "number",
-                                    "description": "Price with fee in USD"
-                                  }
-                                },
-                                "required": [
-                                  "source",
-                                  "withFee"
-                                ]
+                                "type": "number",
+                                "description": "Marketplace fee-inclusive sourcing price in USD"
                               },
                               "offer": {
                                 "type": "object",
@@ -3985,20 +3951,21 @@
                                   "iconUrl"
                                 ]
                               },
-                              "market": {
-                                "type": "integer"
-                              },
-                              "purchaseStatus": {
+                              "status": {
                                 "type": "string",
                                 "enum": [
-                                  "INITIATED",
-                                  "PENDING",
-                                  "ACTIVE",
-                                  "HOLD",
-                                  "COMPLETED",
-                                  "FAILED",
-                                  "REVERTED"
-                                ]
+                                  "initiated",
+                                  "pending",
+                                  "active",
+                                  "hold",
+                                  "completed",
+                                  "failed",
+                                  "canceled",
+                                  "reverted",
+                                  "escrow",
+                                  "partial"
+                                ],
+                                "description": "Per-item status (withdrawals only)"
                               }
                             },
                             "required": [
@@ -4051,8 +4018,8 @@
                         "revertedBy": {
                           "type": "string",
                           "enum": [
-                            "SUPPLIER",
-                            "USER"
+                            "supplier",
+                            "user"
                           ]
                         },
                         "botInfo": {
@@ -4384,28 +4351,6 @@
                           "minLength": 5,
                           "maxLength": 256
                         },
-                        "market": {
-                          "anyOf": [
-                            {
-                              "type": "number",
-                              "enum": [
-                                1
-                              ]
-                            },
-                            {
-                              "type": "number",
-                              "enum": [
-                                2
-                              ]
-                            },
-                            {
-                              "type": "number",
-                              "enum": [
-                                3
-                              ]
-                            }
-                          ]
-                        },
                         "offer": {
                           "type": "object",
                           "properties": {
@@ -4428,7 +4373,6 @@
                       },
                       "required": [
                         "itemId",
-                        "market",
                         "offer"
                       ]
                     },
@@ -4479,8 +4423,8 @@
                         "type": {
                           "type": "string",
                           "enum": [
-                            "DEPOSIT",
-                            "WITHDRAW"
+                            "deposit",
+                            "withdraw"
                           ]
                         },
                         "externalId": {
@@ -4507,15 +4451,16 @@
                         "status": {
                           "type": "string",
                           "enum": [
-                            "INITIATED",
-                            "PENDING",
-                            "ACTIVE",
-                            "HOLD",
-                            "COMPLETED",
-                            "FAILED",
-                            "REVERTED",
-                            "ESCROW",
-                            "PARTIAL"
+                            "initiated",
+                            "pending",
+                            "active",
+                            "hold",
+                            "completed",
+                            "failed",
+                            "canceled",
+                            "reverted",
+                            "escrow",
+                            "partial"
                           ]
                         },
                         "game": {
@@ -4564,21 +4509,8 @@
                                 "description": "BUFF163 market price in USD"
                               },
                               "sourcingPrice": {
-                                "type": "object",
-                                "properties": {
-                                  "source": {
-                                    "type": "number",
-                                    "description": "Price without fee in USD"
-                                  },
-                                  "withFee": {
-                                    "type": "number",
-                                    "description": "Price with fee in USD"
-                                  }
-                                },
-                                "required": [
-                                  "source",
-                                  "withFee"
-                                ]
+                                "type": "number",
+                                "description": "Marketplace fee-inclusive sourcing price in USD"
                               },
                               "offer": {
                                 "type": "object",
@@ -4670,20 +4602,21 @@
                                   "iconUrl"
                                 ]
                               },
-                              "market": {
-                                "type": "integer"
-                              },
-                              "purchaseStatus": {
+                              "status": {
                                 "type": "string",
                                 "enum": [
-                                  "INITIATED",
-                                  "PENDING",
-                                  "ACTIVE",
-                                  "HOLD",
-                                  "COMPLETED",
-                                  "FAILED",
-                                  "REVERTED"
-                                ]
+                                  "initiated",
+                                  "pending",
+                                  "active",
+                                  "hold",
+                                  "completed",
+                                  "failed",
+                                  "canceled",
+                                  "reverted",
+                                  "escrow",
+                                  "partial"
+                                ],
+                                "description": "Per-item status (withdrawals only)"
                               }
                             },
                             "required": [
@@ -4736,8 +4669,8 @@
                         "revertedBy": {
                           "type": "string",
                           "enum": [
-                            "SUPPLIER",
-                            "USER"
+                            "supplier",
+                            "user"
                           ]
                         },
                         "botInfo": {

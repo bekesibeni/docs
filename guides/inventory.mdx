@@ -10,7 +10,7 @@ The inventory endpoint returns a user's tradeable Steam items along with live of
 ## Fetching Inventory
 
 ```http
-GET https://api.assetpay.co/client/inventory?game=730
+GET https://api.assetpay.gg/client/inventory?game=730
 Authorization: CLIENT_TOKEN
 ```
 
@@ -125,7 +125,7 @@ Rust items work the same way, but they can be stackable. When an item has an `am
 You can combine query parameters to build a search UI:
 
 ```http
-GET https://api.assetpay.co/client/inventory?game=730&search=knife&minPrice=50&maxPrice=500&sort=price_asc
+GET https://api.assetpay.gg/client/inventory?game=730&search=knife&minPrice=50&maxPrice=500&sort=price_asc
 Authorization: CLIENT_TOKEN
 ```
 

@@ -1,0 +1,72 @@
+---
+title: "Verification Status"
+description: "Check the authenticated client's current verification state."
+---
+
+# GET /client/verification/status
+
+Returns the authenticated client's current verification level, associated email, latest Signicat process, and linked verified identity (if any).
+
+**Authentication:** Client Token (`Authorization` header)
+
+## Request
+
+```http
+GET https://api.assetpay.gg/client/verification/status
+Authorization: CLIENT_TOKEN
+```
+
+## Response
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": {
+    "verificationLevel": 1,
+    "email": "user@example.com",
+    "latestProcess": {
+      "dossierId": "dossier-uuid",
+      "processId": "process-uuid",
+      "captureUrl": "https://capture.signicat.com/...",
+      "status": "ACCEPTED",
+      "createdAt": "2026-03-04T14:30:00Z",
+      "completedAt": "2026-03-04T14:35:00Z"
+    },
+    "linkedIdentity": {
+      "id": "identity-uuid",
+      "firstName": "John",
+      "lastName": "Doe",
+      "documentCountry": "NOR",
+      "linkedAt": "2026-03-04T14:35:00Z"
+    }
+  }
+}
+```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `verificationLevel` | number | `0` = none, `1` = PictureID-verified |
+| `email` | string \| null | Email set during `/start`, used for linking |
+| `latestProcess` | object \| null | Most recent Signicat process, or null if never started |
+| `linkedIdentity` | object \| null | Linked verified identity, or null if not yet verified |
+
+### Process Statuses
+
+| Status | Meaning |
+|--------|---------|
+| `CREATED` | Process created, capture URL generated |
+| `CAPTURE_PENDING` | User is in the capture flow |
+| `PROCESSING` | Document and selfie are being analyzed |
+| `ACCEPTED` | Verification successful — `verificationLevel` is now 1 |
+| `REJECTED` | Document or selfie failed validation |
+| `ERROR` | Something went wrong during processing |
+| `EXPIRED` | Not completed within 30 minutes |
+
+## Errors
+
+| Code | Key | When |
+|------|-----|------|
+| 1222 | `INVALID_TOKEN` | Client token is invalid or expired |

@@ -13,12 +13,12 @@ Connect using Socket.IO with your API key or a client token:
 
 **With API key (merchant-level access):**
 ```
-wss://api.assetpay.co/socket.io/?apiKey=YOUR_API_KEY&EIO=4&transport=websocket
+wss://api.assetpay.gg/socket.io/?apiKey=YOUR_API_KEY&EIO=4&transport=websocket
 ```
 
 **With client token (user-level access):**
 ```
-wss://api.assetpay.co/socket.io/?token=CLIENT_TOKEN&EIO=4&transport=websocket
+wss://api.assetpay.gg/socket.io/?token=CLIENT_TOKEN&EIO=4&transport=websocket
 ```
 
 Both methods join the same merchant room and receive the same events. Use whichever is more convenient for your architecture.
@@ -28,7 +28,7 @@ Both methods join the same merchant room and receive the same events. Use whiche
 ```typescript
 import { io } from 'socket.io-client';
 
-const socket = io('wss://api.assetpay.co', {
+const socket = io('wss://api.assetpay.gg', {
   transports: ['websocket'],
   query: {
     apiKey: 'YOUR_API_KEY'  // or token: 'CLIENT_TOKEN'

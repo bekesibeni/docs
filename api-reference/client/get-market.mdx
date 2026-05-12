@@ -12,7 +12,7 @@ Returns items currently available on the market for purchase (withdrawal). Suppo
 ## Request
 
 ```http
-GET https://api.assetpay.co/client/market?game=730&search=awp&sort=price_asc&page=1&perPage=50
+GET https://api.assetpay.gg/client/market?game=730&search=awp&sort=price_asc&page=1&limit=50
 Authorization: CLIENT_TOKEN
 ```
 
@@ -26,7 +26,7 @@ Authorization: CLIENT_TOKEN
 | `minPrice` | number | - | Minimum price filter (USD) |
 | `maxPrice` | number | - | Maximum price filter (USD) |
 | `page` | number | `1` | Page number |
-| `perPage` | number | `50` | Items per page (`-1` for all items, max `1000`) |
+| `limit` | number | `50` | Items per page (max `1000`) |
 
 ## Response
 

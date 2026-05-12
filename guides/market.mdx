@@ -10,7 +10,7 @@ The market endpoints return items currently available for purchase. This is what
 ## Fetching Market Items
 
 ```http
-GET https://api.assetpay.co/client/market?game=730&page=1&perPage=50
+GET https://api.assetpay.gg/client/market?game=730&page=1&perPage=50
 Authorization: CLIENT_TOKEN
 ```
 
@@ -68,7 +68,7 @@ Response:
 For building an autocomplete search box, use the suggestions endpoint:
 
 ```http
-GET https://api.assetpay.co/client/market/suggestions?q=drag
+GET https://api.assetpay.gg/client/market/suggestions?q=drag
 Authorization: CLIENT_TOKEN
 ```
 
@@ -79,7 +79,7 @@ This returns a lightweight list of matching item names, faster than a full marke
 To get all available listings for a specific item type:
 
 ```http
-GET https://api.assetpay.co/client/market/item?itemId=ITEM_ID&delivery=normal
+GET https://api.assetpay.gg/client/market/item?itemId=ITEM_ID&delivery=normal
 Authorization: CLIENT_TOKEN
 ```
 
@@ -115,7 +115,7 @@ When a user clicks "Buy", always validate that the price hasn't changed since th
 If you need pricing data without item details (for example, to update prices in your own database), use the `/secure/prices` endpoint with your API key:
 
 ```http
-GET https://api.assetpay.co/secure/prices?game=730
+GET https://api.assetpay.gg/secure/prices?game=730
 api-key: YOUR_API_KEY
 ```
 

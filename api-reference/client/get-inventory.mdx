@@ -12,7 +12,7 @@ Returns the authenticated user's Steam inventory for a specific game, with offer
 ## Request
 
 ```http
-GET https://api.assetpay.co/client/inventory?game=730&page=1&perPage=50
+GET https://api.assetpay.gg/client/inventory?game=730&page=1&limit=50
 Authorization: CLIENT_TOKEN
 ```
 
@@ -27,7 +27,7 @@ Authorization: CLIENT_TOKEN
 | `minPrice` | number | - | Minimum offer price (USD) |
 | `maxPrice` | number | - | Maximum offer price (USD) |
 | `page` | number | `1` | Page number |
-| `perPage` | number | `50` | Items per page |
+| `limit` | number | `50` | Items per page |
 
 ## Response
 
@@ -105,4 +105,5 @@ Authorization: CLIENT_TOKEN
 | Code | Key | When |
 |------|-----|------|
 | 3 | `INVENTORY_FETCH_FAILED` | Steam inventory couldn't be loaded |
+| 7 | `USER_NOT_TRADEABLE` | Steam returned 403 — inventory private or account can't trade |
 | 1222 | `INVALID_TOKEN` | Client token is invalid or expired |

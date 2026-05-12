@@ -88,6 +88,14 @@
               "api-reference/secure/check-tradeurl",
               "api-reference/secure/get-prices"
             ]
+          },
+          {
+            "group": "Verification",
+            "pages": [
+              "api-reference/verification/start",
+              "api-reference/verification/status",
+              "api-reference/verification/link"
+            ]
           }
         ]
       }
@@ -101,13 +109,13 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:support@assetpay.co"
+        "href": "mailto:support@assetpay.gg"
       }
     ],
     "primary": {
       "type": "button",
       "label": "Dashboard",
-      "href": "https://staging.assetpay.co"
+      "href": "https://staging.assetpay.gg"
     }
   },
   "contextual": {

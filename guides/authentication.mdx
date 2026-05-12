@@ -14,7 +14,7 @@ There are two ways to get a client token: call our API, or generate one locally 
 Make a POST request with your API key:
 
 ```http
-POST https://api.assetpay.co/auth/authenticate-client
+POST https://api.assetpay.gg/auth/authenticate-client
 Content-Type: application/json
 api-key: YOUR_API_KEY
 
@@ -134,7 +134,7 @@ This works because AssetPay protects your balance through **callbacks**, not thr
 
 **Deposits** don't require any balance check from you. The user is sending you items, not taking them. Your backend gets notified via callbacks when the deposit completes, and you credit the user at that point.
 
-**Withdrawals** are protected by the INITIATED callback. When a user initiates a withdrawal, AssetPay sends a callback to your backend before purchasing anything. Your backend checks the user's balance, deducts it, and responds with `200` to approve. If the balance is insufficient, respond with a rejection and the trade is cancelled. Nothing gets purchased until your backend says so.
+**Withdrawals** are protected by the `initiated` callback. When a user initiates a withdrawal, AssetPay sends a callback to your backend before purchasing anything. Your backend checks the user's balance, deducts it, and responds with `200` to approve. If the balance is insufficient, respond with a rejection and the trade is cancelled. Nothing gets purchased until your backend says so.
 
 This means the typical architecture looks like:
 
@@ -143,10 +143,10 @@ This means the typical architecture looks like:
     The user's browser uses the client token to fetch inventory, browse the market, and initiate trades.
   </Step>
   <Step title="AssetPay calls your backend">
-    For withdrawals, AssetPay sends an `INITIATED` callback to your backend. Your backend validates the user's balance, deducts it, and responds with `200` to approve the purchase. To reject, respond with `{ "action": "reject" }`.
+    For withdrawals, AssetPay sends an `initiated` callback to your backend. Your backend validates the user's balance, deducts it, and responds with `200` to approve the purchase. To reject, respond with `{ "action": "reject" }`.
   </Step>
   <Step title="Your backend processes results">
-    As the trade progresses, your backend receives callbacks for each status change. Credit balances on `COMPLETED`, handle refunds on `FAILED` or `REVERTED`.
+    As the trade progresses, your backend receives callbacks for each status change. Credit balances on `completed`, handle refunds on `failed` or `reverted`.
   </Step>
 </Steps>
 

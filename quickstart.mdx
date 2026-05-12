@@ -17,13 +17,13 @@ This guide takes you from zero to a working deposit in four steps. You'll need y
 ## Base URL
 
 ```
-https://api.assetpay.co
+https://api.assetpay.gg
 ```
 
 For staging/testing:
 
 ```
-https://staging-api.assetpay.co
+https://api-staging.assetpay.gg
 ```
 
 ## Step 1: Authenticate a Client
@@ -31,7 +31,7 @@ https://staging-api.assetpay.co
 Every user who trades on your platform needs a client token. Your backend generates this by calling the authenticate endpoint with your API key.
 
 ```http
-POST https://api.assetpay.co/auth/authenticate-client
+POST https://api.assetpay.gg/auth/authenticate-client
 Content-Type: application/json
 api-key: YOUR_API_KEY
 
@@ -64,7 +64,7 @@ Your **API key** (`ap_...`) should stay on your backend. The **client token** is
 With the client token, fetch the user's CS2 inventory:
 
 ```http
-GET https://api.assetpay.co/client/inventory?game=730&refresh=true
+GET https://api.assetpay.gg/client/inventory?game=730&refresh=true
 Authorization: CLIENT_TOKEN
 ```
 
@@ -110,7 +110,7 @@ Key fields:
 When the user selects items to deposit, send a deposit request (from frontend or backend):
 
 ```http
-POST https://api.assetpay.co/client/trading/deposit
+POST https://api.assetpay.gg/client/trading/deposit
 Content-Type: application/json
 Authorization: CLIENT_TOKEN
 
@@ -137,8 +137,8 @@ Response:
   "success": true,
   "data": {
     "id": "trade-uuid-here",
-    "type": "DEPOSIT",
-    "status": "INITIATED",
+    "type": "deposit",
+    "status": "initiated",
     "game": "730",
     "items": [...],
     "totalPrice": 10.75,
@@ -159,12 +159,12 @@ As the trade progresses, AssetPay sends POST requests to your callback URL. Each
   "payload": {
     "trade": {
       "id": "trade-uuid-here",
-      "type": "DEPOSIT",
-      "status": "COMPLETED",
+      "type": "deposit",
+      "status": "completed",
       "totalPrice": 10.75,
       "items": [...]
     },
-    "event": "COMPLETED",
+    "event": "completed",
     "timestamp": "2026-03-11T10:05:00.000Z",
     "key": "hmac_signature_hex"
   }
@@ -174,7 +174,7 @@ As the trade progresses, AssetPay sends POST requests to your callback URL. Each
 Your callback handler should:
 
 1. Verify the HMAC signature (see [Callbacks](/guides/callbacks))
-2. Credit the user's balance when status is `COMPLETED`
+2. Credit the user's balance when status is `completed`
 3. Respond with HTTP `200`
 
 ```javascript
@@ -186,7 +186,7 @@ app.post('/assetpay/callback', (req, res) => {
     return res.status(401).send('Invalid signature');
   }
 
-  if (trade.type === 'DEPOSIT' && event === 'COMPLETED') {
+  if (trade.type === 'deposit' && event === 'completed') {
     // Credit the user's balance
     creditBalance(trade.clientSteamID, trade.totalPrice);
   }

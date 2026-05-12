@@ -14,7 +14,7 @@ The main trade object returned by deposit/withdraw endpoints, trade history, and
 ```typescript
 interface ITrade {
   id: string;                    // Unique trade ID (UUID)
-  type: TradeType;               // "DEPOSIT" or "WITHDRAW"
+  type: TradeType;               // "deposit" or "withdraw"
   status: TradeStatus;           // Current trade status
   game: string;                  // Game app ID ("730" or "252490")
 
@@ -30,7 +30,7 @@ interface ITrade {
 
   // Instant deposit fields (deposits only)
   preCredit?: number;            // Amount credited instantly (USD)
-  pendingCredit?: number;        // Amount held until COMPLETED (USD)
+  pendingCredit?: number;        // Amount held until "completed" (USD)
   isInstant?: boolean;           // Whether instant credit was requested
   collateral?: {
     merchant: number;            // Merchant collateral portion
@@ -49,8 +49,8 @@ interface ITrade {
   updatedAt: Date;
 
   // Status-specific
-  revertedBy?: RevertedBy;       // Who reversed the trade (if REVERTED)
-  error?: string;                // Error message (if FAILED)
+  revertedBy?: RevertedBy;       // Who reversed the trade (status === "reverted")
+  error?: string;                // Error message (status === "failed")
 
   // Bot details
   botInfo?: {
@@ -138,52 +138,50 @@ interface Charm {
 
 ### TradeStatus
 
+All trade and item statuses are **lowercase** in API requests, responses, and webhook payloads.
+
 ```typescript
-enum TradeStatus {
-  INITIATED = 'INITIATED',      // Trade created, processing not started
-  PENDING   = 'PENDING',        // Steam trade offer sent
-  ACTIVE    = 'ACTIVE',         // Trade offer accepted, transfer in progress
-  ESCROW    = 'ESCROW',         // Steam 2FA escrow hold
-  HOLD      = 'HOLD',           // 7-day Steam hold period
-  COMPLETED = 'COMPLETED',      // Trade finished successfully
-  FAILED    = 'FAILED',         // Trade failed
-  REVERTED  = 'REVERTED',       // Trade reversed after being active
-  PARTIAL   = 'PARTIAL',        // Some items succeeded, others didn't
-}
+type TradeStatus =
+  | 'initiated'   // Trade created, processing not started
+  | 'pending'     // Steam trade offer sent
+  | 'active'      // Trade offer accepted, transfer in progress
+  | 'escrow'      // Steam 2FA escrow hold
+  | 'hold'        // 7-day Steam hold period
+  | 'completed'   // Trade finished successfully
+  | 'failed'      // Trade failed
+  | 'reverted'    // Trade reversed after being active
+  | 'partial';    // Some items succeeded, others didn't
 ```
 
 ### TradeType
 
 ```typescript
-enum TradeType {
-  DEPOSIT  = 'DEPOSIT',         // User selling items to merchant
-  WITHDRAW = 'WITHDRAW',        // User buying items from market
-}
+type TradeType =
+  | 'deposit'    // User selling items to merchant
+  | 'withdraw';  // User buying items from market
 ```
 
 ### RevertedBy
 
 ```typescript
-enum RevertedBy {
-  SUPPLIER = 'SUPPLIER',        // Marketplace supplier reversed
-  USER     = 'USER',            // End user reversed
-}
+type RevertedBy =
+  | 'supplier'   // Marketplace supplier reversed
+  | 'user';      // End user reversed
 ```
 
 ### ItemPurchaseStatus
 
-Per-item status for withdrawal trades:
+Per-item status for withdrawal trades. Same values as `TradeStatus`.
 
 ```typescript
-enum ItemPurchaseStatus {
-  INITIATED = 'INITIATED',
-  PENDING   = 'PENDING',
-  ACTIVE    = 'ACTIVE',
-  HOLD      = 'HOLD',
-  COMPLETED = 'COMPLETED',
-  FAILED    = 'FAILED',
-  REVERTED  = 'REVERTED',
-}
+type ItemPurchaseStatus =
+  | 'initiated'
+  | 'pending'
+  | 'active'
+  | 'hold'
+  | 'completed'
+  | 'failed'
+  | 'reverted';
 ```
 
 ### Games

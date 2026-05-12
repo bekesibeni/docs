@@ -25,8 +25,8 @@ Every callback has this structure:
   "payload": {
     "trade": {
       "id": "trade-uuid",
-      "type": "DEPOSIT",
-      "status": "COMPLETED",
+      "type": "deposit",
+      "status": "completed",
       "game": "730",
       "externalId": "your-tracking-id",
       "merchantId": "merchant-uuid",
@@ -42,7 +42,7 @@ Every callback has this structure:
       "createdAt": "2026-03-04T10:00:00.000Z",
       "updatedAt": "2026-03-11T10:00:00.000Z"
     },
-    "event": "COMPLETED",
+    "event": "completed",
     "timestamp": "2026-03-11T10:00:00.000Z",
     "key": "a1b2c3d4e5f6..."
   }
@@ -103,27 +103,27 @@ The signature is computed over the `trade` object specifically, not the entire p
 
 | Event | What to Do |
 |-------|-----------|
-| `INITIATED` | Acknowledge with `200`. No balance action. |
-| `PENDING` | Trade offer sent. Acknowledge with `200`. |
-| `ACTIVE` | User accepted. Acknowledge with `200`. |
-| `HOLD` | Credit `preCredit` if using instant deposits. Otherwise just acknowledge. |
-| `COMPLETED` | Credit `pendingCredit` (or `totalPrice` if not using instant deposits). |
-| `FAILED` | No credit needed. Optionally notify the user. |
-| `REVERTED` | Reverse any `preCredit` that was already credited. |
-| `ESCROW` | Acknowledge. Steam escrow in effect. |
+| `initiated` | Acknowledge with `200`. No balance action. |
+| `pending` | Trade offer sent. Acknowledge with `200`. |
+| `active` | User accepted. Acknowledge with `200`. |
+| `hold` | Credit `preCredit` if using instant deposits. Otherwise just acknowledge. |
+| `completed` | Credit `pendingCredit` (or `totalPrice` if not using instant deposits). |
+| `failed` | No credit needed. Optionally notify the user. |
+| `reverted` | Reverse any `preCredit` that was already credited. |
+| `escrow` | Acknowledge. Steam escrow in effect. |
 
 ### Withdrawal Callbacks
 
 | Event | What to Do |
 |-------|-----------|
-| `INITIATED` | **This is the approval gate.** Check the user's balance, deduct it, and respond `200` to approve. Or respond with `4xx` to reject (see below). Nothing gets purchased until you approve. |
-| `ACTIVE` | Item purchased from supplier. Acknowledge with `200`. |
-| `HOLD` | Item being delivered. Acknowledge with `200`. |
-| `COMPLETED` | Delivery complete. No action needed. |
-| `FAILED` | Refund `totalPrice` to the user's balance. |
-| `REVERTED` | Refund `totalPrice` to the user. Check `revertedBy`. |
+| `initiated` | **This is the approval gate.** Check the user's balance, deduct it, and respond `200` to approve. Or respond with `4xx` to reject (see below). Nothing gets purchased until you approve. |
+| `active` | Item purchased from supplier. Acknowledge with `200`. |
+| `hold` | Item being delivered. Acknowledge with `200`. |
+| `completed` | Delivery complete. No action needed. |
+| `failed` | Refund `totalPrice` to the user's balance. |
+| `reverted` | Refund `totalPrice` to the user. Check `revertedBy`. |
 
-### The INITIATED Callback for Withdrawals
+### The `initiated` callback for withdrawals
 
 This is the most important callback in the withdrawal flow. When a user initiates a withdrawal, AssetPay sends you this callback **before purchasing anything**. Your backend is the gatekeeper.
 
@@ -147,7 +147,7 @@ Content-Type: application/json
 
 Any `4xx` status works (400, 402, 403, 409, etc.). The `reason` field is optional but recommended -- it appears in AssetPay logs for debugging.
 
-The trade will be marked `FAILED` and your merchant wallet balance is refunded automatically. You'll receive a follow-up `FAILED` callback.
+The trade will be marked `failed` and your merchant wallet balance is refunded automatically. You'll receive a follow-up `failed` callback.
 
 **Legacy format (still supported):** You can also respond with `200` and a rejection body:
 
@@ -183,10 +183,10 @@ app.post('/assetpay/callback', async (req, res) => {
 
   // Process the event
   switch (trade.type) {
-    case 'DEPOSIT':
+    case 'deposit':
       await handleDepositEvent(trade, event);
       break;
-    case 'WITHDRAW':
+    case 'withdraw':
       await handleWithdrawalEvent(trade, event);
       break;
   }
@@ -217,11 +217,11 @@ Failed callbacks are kept indefinitely for debugging. You can view callback hist
 Here's the sequence of callbacks you'd receive for a typical deposit:
 
 ```
-1. INITIATED  →  Trade created, offer about to be sent
-2. PENDING    →  Steam trade offer sent to user
-3. ACTIVE     →  User accepted the offer
-4. HOLD       →  7-day hold started (credit preCredit here)
-5. COMPLETED  →  Hold ended, no reversal (credit pendingCredit here)
+1. initiated  →  Trade created, offer about to be sent
+2. pending    →  Steam trade offer sent to user
+3. active     →  User accepted the offer
+4. hold       →  7-day hold started (credit preCredit here)
+5. completed  →  Hold ended, no reversal (credit pendingCredit here)
 ```
 
-If something goes wrong at any step, you'll get a `FAILED` callback instead of the next step. If a reversal happens during `HOLD`, you'll get `REVERTED`.
+If something goes wrong at any step, you'll get a `failed` callback instead of the next step. If a reversal happens during `hold`, you'll get `reverted`.
