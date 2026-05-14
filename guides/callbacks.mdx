@@ -9,7 +9,7 @@ AssetPay sends HTTP POST requests to your callback URL whenever a trade changes 
 
 ## Setup
 
-Configure your callback URL in the AssetPay dashboard under Settings. You also need an API secret, which is used for HMAC signature verification.
+Configure your callback URL in the AssetPay dashboard under Settings. Your API secret is used to sign every webhook — keep it private.
 
 Your callback endpoint must:
 - Accept POST requests with JSON body
@@ -18,184 +18,257 @@ Your callback endpoint must:
 
 ## Callback Payload
 
-Every callback has this structure:
+The body of every state-change callback is the full trade object directly:
 
 ```json
 {
-  "payload": {
-    "trade": {
-      "id": "trade-uuid",
-      "type": "deposit",
-      "status": "completed",
-      "game": "730",
-      "externalId": "your-tracking-id",
-      "merchantId": "merchant-uuid",
-      "clientUserId": "client-uuid",
-      "clientSteamID": "76561198012345678",
-      "clientTradeUrl": "https://steamcommunity.com/tradeoffer/new/?partner=...",
-      "items": [...],
-      "totalPrice": 10.75,
-      "preCredit": 8.60,
-      "pendingCredit": 2.15,
-      "isInstant": true,
-      "holdEndDate": "2026-03-11T10:00:00.000Z",
-      "createdAt": "2026-03-04T10:00:00.000Z",
-      "updatedAt": "2026-03-11T10:00:00.000Z"
-    },
-    "event": "completed",
-    "timestamp": "2026-03-11T10:00:00.000Z",
-    "key": "a1b2c3d4e5f6..."
+  "trade": {
+    "id": "trade-uuid",
+    "type": "deposit",
+    "source": "client",
+    "status": "completed",
+    "game": "730",
+    "externalId": "your-tracking-id",
+    "merchantId": "merchant-uuid",
+    "clientUserId": "client-uuid",
+    "clientSteamID": "76561198012345678",
+    "clientTradeUrl": "https://steamcommunity.com/tradeoffer/new/?partner=...",
+    "items": [...],
+    "totalPrice": 10.75,
+    "preCredit": 8.60,
+    "pendingCredit": 2.15,
+    "isInstant": true,
+    "holdEndDate": "2026-03-11T10:00:00.000Z",
+    "createdAt": "2026-03-04T10:00:00.000Z",
+    "updatedAt": "2026-03-11T10:00:00.000Z"
   }
 }
 ```
 
 | Field | Description |
 |-------|-------------|
-| `payload.trade` | Full [ITrade](/reference/types#itrade) object with current state |
-| `payload.event` | The event that triggered this callback (matches the trade's current status) |
-| `payload.timestamp` | ISO 8601 timestamp of when the callback was generated |
-| `payload.key` | HMAC-SHA256 signature for verification |
+| `trade` | Full [Trade](/reference/types#trade) object with current state |
+| `trade.status` | The trade's new status — this is the event you're being notified about |
+| `trade.source` | `"client"` (end-user via `/client/trading/*`) or `"self"` (merchant self-trade via `/secure/*`). The same callback URL fires for both. |
+
+The "event" you're handling is `trade.status` — there is no separate `event` field on the body.
+
+<Note>
+The withdrawal approval callback (`initiated`) uses a slightly different envelope — see [The `initiated` callback for withdrawals](#the-initiated-callback-for-withdrawals) below.
+</Note>
 
 ## Signature Verification
 
-Always verify the signature before processing a callback. The signature is computed over the `trade` object using your API secret.
+Every webhook is signed with HMAC-SHA256 using your API secret. The signature is delivered in the `X-AssetPay-Signature` header — **not** in the body.
 
-The signing algorithm uses **canonical JSON** (keys sorted recursively, no whitespace) as the HMAC message:
+### Header format
+
+```
+X-AssetPay-Signature: t=2026-03-11T10:00:00.000Z,id=<delivery-id>,s=<hex-signature>
+```
+
+If your API secret was recently rotated, the header may also include `s1=<previous-hex-signature>` so callbacks signed with the prior secret remain verifiable during the grace window.
+
+### What's signed
+
+The HMAC-SHA256 message is the literal string:
+
+```
+<deliveryId>.<timestamp>.<rawBody>
+```
+
+- `deliveryId` — value from the `id=` field in the header
+- `timestamp` — value from the `t=` field (ISO 8601)
+- `rawBody` — the **raw request body bytes**, exactly as received. Do not re-serialize the parsed JSON; parsers may reorder keys or change spacing and break the HMAC.
+
+### Verification example
 
 ```typescript
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 
-function canonicalize(value: unknown): string {
-  if (value === null || typeof value !== 'object') return JSON.stringify(value);
-  if (Array.isArray(value)) return '[' + value.map(canonicalize).join(',') + ']';
-  const keys = Object.keys(value as Record<string, unknown>).sort();
-  return '{' + keys.map(k =>
-    JSON.stringify(k) + ':' + canonicalize((value as Record<string, unknown>)[k])
-  ).join(',') + '}';
+const TOLERANCE_MS = 5 * 60_000; // 5 minutes
+
+function verifyAssetPaySignature(
+  header: string | undefined,
+  rawBody: string,
+  acceptedSecrets: string[],
+): boolean {
+  if (!header) return false;
+  const parts = Object.fromEntries(
+    header.split(',').map(p => {
+      const idx = p.indexOf('=');
+      return idx === -1 ? [p, ''] : [p.slice(0, idx).trim(), p.slice(idx + 1).trim()];
+    }),
+  );
+  const t = parts.t;
+  const deliveryId = parts.id;
+  const sig = parts.s ?? parts.s1;
+  if (!t || !deliveryId || !sig) return false;
+
+  const ts = Date.parse(t);
+  if (Number.isNaN(ts)) return false;
+  if (Math.abs(Date.now() - ts) > TOLERANCE_MS) return false;
+
+  const sigBuf = Buffer.from(sig);
+  for (const secret of acceptedSecrets) {
+    if (!secret) continue;
+    const expected = Buffer.from(
+      createHmac('sha256', secret)
+        .update(`${deliveryId}.${t}.${rawBody}`)
+        .digest('hex'),
+    );
+    if (expected.length === sigBuf.length && timingSafeEqual(expected, sigBuf)) {
+      return true;
+    }
+  }
+  return false;
 }
 
-function verifySignature(trade: any, signature: string, secret: string): boolean {
-  const expected = createHmac('sha256', secret)
-    .update(canonicalize(trade))
-    .digest('hex');
-
-  // Use timing-safe comparison to prevent timing attacks
-  const a = Buffer.from(expected);
-  const b = Buffer.from(signature);
-  if (a.length !== b.length) return false;
-  return require('crypto').timingSafeEqual(a, b);
-}
-
-// Usage in your callback handler:
-const { trade, key } = req.body.payload;
-if (!verifySignature(trade, key, YOUR_API_SECRET)) {
-  return res.status(401).send('Invalid signature');
-}
+// Usage in an Express handler (keep the raw body!)
+app.post(
+  '/assetpay/callback',
+  express.raw({ type: 'application/json' }),
+  (req, res) => {
+    const rawBody = req.body.toString('utf8');
+    if (!verifyAssetPaySignature(req.header('X-AssetPay-Signature'), rawBody, [YOUR_API_SECRET])) {
+      return res.status(401).send('Invalid signature');
+    }
+    const { trade } = JSON.parse(rawBody);
+    // ... handle trade.status, trade.type, etc.
+    res.status(200).send('OK');
+  },
+);
 ```
 
 <Warning>
-The signature is computed over the `trade` object specifically, not the entire payload. Make sure you pass `payload.trade` (not the whole `payload`) to your verification function.
+You **must** verify against the raw request body bytes, not the parsed-then-re-stringified JSON. Most HTTP frameworks need explicit configuration to expose the raw body (e.g. `express.raw()`, `fastify-raw-body`).
 </Warning>
+
+The 5-minute timestamp tolerance protects against replay attacks. Reject anything older.
 
 ## Handling Events
 
+The `event` you're handling is the new value of `trade.status`. AssetPay dispatches a webhook on every status transition.
+
 ### Deposit Callbacks
 
-| Event | What to Do |
-|-------|-----------|
-| `initiated` | Acknowledge with `200`. No balance action. |
-| `pending` | Trade offer sent. Acknowledge with `200`. |
-| `active` | User accepted. Acknowledge with `200`. |
-| `hold` | Credit `preCredit` if using instant deposits. Otherwise just acknowledge. |
-| `completed` | Credit `pendingCredit` (or `totalPrice` if not using instant deposits). |
-| `failed` | No credit needed. Optionally notify the user. |
-| `reverted` | Reverse any `preCredit` that was already credited. |
-| `escrow` | Acknowledge. Steam escrow in effect. |
+| `trade.status` | What to Do |
+|----------------|-----------|
+| `initiated` | Trade created, no Steam offer sent yet. Acknowledge with `200`. No balance action. |
+| `active` | Steam trade offer **sent to the user** — awaiting their acceptance. Acknowledge with `200`. |
+| `escrow` | User accepted, but Steam is holding the items in 2FA escrow. Acknowledge with `200`. |
+| `hold` | User accepted, items received, 7-day Steam hold started. Credit `preCredit` if using instant deposits; otherwise just acknowledge. |
+| `completed` | Hold ended cleanly (or no hold required for Rust). Credit `pendingCredit` (or `totalPrice` if not using instant deposits). |
+| `failed` | Trade did not go through. No credit needed. Optionally notify the user. |
+| `canceled` | Trade was canceled before any state was applied. No action needed. |
+| `reverted` | A previously completed deposit was reversed. Reverse any `preCredit` + `pendingCredit` already credited. Check `revertedBy`. |
 
 ### Withdrawal Callbacks
 
-| Event | What to Do |
-|-------|-----------|
-| `initiated` | **This is the approval gate.** Check the user's balance, deduct it, and respond `200` to approve. Or respond with `4xx` to reject (see below). Nothing gets purchased until you approve. |
-| `active` | Item purchased from supplier. Acknowledge with `200`. |
-| `hold` | Item being delivered. Acknowledge with `200`. |
-| `completed` | Delivery complete. No action needed. |
-| `failed` | Refund `totalPrice` to the user's balance. |
-| `reverted` | Refund `totalPrice` to the user. Check `revertedBy`. |
+| `trade.status` | What to Do |
+|----------------|-----------|
+| `initiated` | **Approval gate** — see below. The merchant's wallet hasn't been debited yet; your response decides whether the withdrawal proceeds. |
+| `hold` | Items sourced from supplier and **Steam trade offer sent and accepted by the user** — 7-day hold period running. Acknowledge with `200`. |
+| `completed` | Hold ended cleanly. No action needed. |
+| `failed` | Trade did not go through. Refund `totalPrice` to the user's balance if you previously deducted it. |
+| `canceled` | Trade was canceled before processing. Refund `totalPrice` to the user's balance if you previously deducted it. |
+| `reverted` | A previously completed withdrawal was reversed (by supplier or user). Refund `totalPrice`. Check `revertedBy`. |
+
+Withdrawals do **not** have a separate `active` state — they jump from `initiated` straight to `hold` once the supplier purchase succeeds and the Steam offer is accepted.
 
 ### The `initiated` callback for withdrawals
 
-This is the most important callback in the withdrawal flow. When a user initiates a withdrawal, AssetPay sends you this callback **before purchasing anything**. Your backend is the gatekeeper.
+This is the most important callback in the withdrawal flow. When a withdrawal is initiated, AssetPay sends you this callback **before purchasing anything**. Your backend decides whether the withdrawal proceeds.
+
+The approval callback has a different body shape from regular state callbacks:
+
+```json
+{
+  "kind": "withdraw",
+  "event": "initiated",
+  "timestamp": "2026-03-11T10:00:00.000Z",
+  "tradeId": "trade-uuid",
+  "data": {
+    "trade": { ... }
+  }
+}
+```
+
+The signature header and signing rules are identical to regular callbacks — same `X-AssetPay-Signature: t=...,id=...,s=...` format, same `<deliveryId>.<timestamp>.<rawBody>` HMAC input.
 
 Your handler should:
 1. Verify the signature
 2. Look up the user by `trade.clientSteamID` or `trade.externalClientUserId`
 3. Check if they can afford `trade.totalPrice`
-4. If yes: deduct the balance and respond with `200`
-5. If no: respond with a rejection
+4. If yes: deduct the balance and respond with `2xx`
+5. If no: respond with a rejection (see below)
+
+<Note>
+Self-trade withdrawals (`source === "self"`) **also** go through this gate. The merchant must have a callback URL configured — withdrawals fail immediately with `MERCHANT_NO_CALLBACK_URL` (1705) if none is registered. If you want to auto-approve all self-trades, your handler can return `200` whenever `trade.source === "self"`.
+</Note>
 
 ### Rejecting a Withdrawal
 
-Respond with any `4xx` status code. `402` (Payment Required) is the recommended choice for balance-related rejections:
+The withdrawal approval gate accepts several rejection signals:
 
-```json
+**Option 1 — HTTP 4xx (recommended):**
+
+```http
 HTTP/1.1 402 Payment Required
 Content-Type: application/json
 
 { "reason": "Insufficient balance" }
 ```
 
-Any `4xx` status works (400, 402, 403, 409, etc.). The `reason` field is optional but recommended -- it appears in AssetPay logs for debugging.
+Any `4xx` status works (400, 402, 403, 409, etc.). The `reason` field is optional but recommended — it appears in AssetPay logs for debugging.
 
-The trade will be marked `failed` and your merchant wallet balance is refunded automatically. You'll receive a follow-up `failed` callback.
-
-**Legacy format (still supported):** You can also respond with `200` and a rejection body:
+**Option 2 — HTTP 2xx with a rejection body:**
 
 ```json
-{ "action": "reject" }
+{ "action": "reject", "reason": "Insufficient balance" }
 ```
 
+Also accepted: `{ "status": "rejected" }`, `{ "errorCode": "INSUFFICIENT_BALANCE" }`, `{ "code": "INSUFFICIENT_BALANCE" }`.
+
+In either case, the trade is marked `failed`, the merchant wallet is refunded automatically, and you receive a follow-up `failed` callback.
+
 <Note>
-Only `4xx` responses are treated as intentional rejections. `5xx` responses and timeouts are treated as delivery failures and retried up to 10 times.
+Only `4xx` responses **or** one of the explicit rejection bodies above are treated as intentional rejections. A plain `200` with any other body counts as approval. `5xx` responses and timeouts are treated as delivery failures and retried.
 </Note>
 
 ## Idempotency
 
-You may receive the same callback more than once (network retries, duplicate deliveries). Your handler should be idempotent. Track processed trade events in your database and skip duplicates:
+You may receive the same callback more than once (network retries, duplicate deliveries). Your handler should be idempotent. Track processed (trade, status) pairs and skip duplicates:
 
 ```typescript
 app.post('/assetpay/callback', async (req, res) => {
-  const { trade, event, key } = req.body.payload;
-
-  if (!verifySignature(trade, key, API_SECRET)) {
+  const rawBody = req.body.toString('utf8');
+  if (!verifyAssetPaySignature(req.header('X-AssetPay-Signature'), rawBody, [API_SECRET])) {
     return res.status(401).send('Invalid signature');
   }
+  const { trade } = JSON.parse(rawBody);
 
-  // Check if we already processed this event for this trade
   const processed = await db.processedCallbacks.findOne({
     tradeId: trade.id,
-    event: event
+    event: trade.status,
   });
-
   if (processed) {
     return res.status(200).send('Already processed');
   }
 
-  // Process the event
   switch (trade.type) {
     case 'deposit':
-      await handleDepositEvent(trade, event);
+      await handleDepositEvent(trade);
       break;
     case 'withdraw':
-      await handleWithdrawalEvent(trade, event);
+      await handleWithdrawalEvent(trade);
       break;
   }
 
-  // Mark as processed
   await db.processedCallbacks.create({
     tradeId: trade.id,
-    event: event,
-    processedAt: new Date()
+    event: trade.status,
+    processedAt: new Date(),
   });
 
   res.status(200).send('OK');
@@ -204,24 +277,23 @@ app.post('/assetpay/callback', async (req, res) => {
 
 ## Retry Behavior
 
-If your endpoint returns a `5xx` status, times out, or doesn't respond within 15 seconds, AssetPay retries the callback:
+If your endpoint returns a non-2xx status, times out, or doesn't respond within 15 seconds, AssetPay retries the callback:
 
-- **Max retries**: 10
-- **Backoff**: Exponential, starting at 30 seconds
-- **Schedule**: ~30s, ~1m, ~2m, ~4m, ~8m, ~16m, ~32m, ~1h, ~2h, ~4h
+- **Total attempts**: 11 (initial + 10 retries)
+- **Backoff schedule**: `30s, 30s, 5m, 5m, 15m, 15m, 1h, 1h, 6h, 6h`
+- **Total window**: ~14h 31m from the first attempt to the last retry
 
-Failed callbacks are kept indefinitely for debugging. You can view callback history and manually resend failed callbacks from the AssetPay dashboard.
+If a callback URL fails continuously for **72 hours**, it is automatically disabled and removed from rotation. Delivery records are retained for 14 days for debugging — you can view callback history and manually retry failed deliveries from the AssetPay dashboard.
 
 ## Callback Example: Complete Deposit Flow
 
-Here's the sequence of callbacks you'd receive for a typical deposit:
+Here's the sequence of callbacks you'd receive for a typical CS2 deposit:
 
 ```
 1. initiated  →  Trade created, offer about to be sent
-2. pending    →  Steam trade offer sent to user
-3. active     →  User accepted the offer
-4. hold       →  7-day hold started (credit preCredit here)
-5. completed  →  Hold ended, no reversal (credit pendingCredit here)
+2. active     →  Steam trade offer sent to user (sitting in their inbox)
+3. hold       →  User accepted, items received, 7-day hold started (credit preCredit here)
+4. completed  →  Hold ended, no reversal (credit pendingCredit here)
 ```
 
-If something goes wrong at any step, you'll get a `failed` callback instead of the next step. If a reversal happens during `hold`, you'll get `reverted`.
+If something goes wrong at any step, you'll get a `failed` callback instead of the next step. If a reversal happens after `completed`, you'll get `reverted`. If the user's Steam account requires escrow, you'll see `active → escrow → hold` instead of `active → hold`. Rust deposits skip the `hold` step entirely and go straight from `active` to `completed`.

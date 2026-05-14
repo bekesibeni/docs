@@ -86,7 +86,14 @@
             "group": "Secure",
             "pages": [
               "api-reference/secure/check-tradeurl",
-              "api-reference/secure/get-prices"
+              "api-reference/secure/get-prices",
+              "api-reference/secure/inventory",
+              "api-reference/secure/sell",
+              "api-reference/secure/buy",
+              "api-reference/secure/get-market",
+              "api-reference/secure/get-item-listings",
+              "api-reference/secure/get-trades",
+              "api-reference/secure/get-trade"
             ]
           },
           {

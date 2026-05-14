@@ -40,7 +40,7 @@ api-key: YOUR_API_KEY
 
 ### clientData Fields
 
-These fields feed into the risk model that determines instant deposit collateral. All are optional and default to `0`/`false` if omitted.
+These fields feed into the risk model that determines instant deposit collateral. All are optional and default to `0`/`false`/`null` if omitted.
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -48,6 +48,8 @@ These fields feed into the risk model that determines instant deposit collateral
 | `kycLevel` | number | User's KYC verification level on your platform (0-3). Level 3 unlocks higher collateral thresholds. |
 | `fiatDeposits` | boolean | User has made fiat deposits on your platform. |
 | `cryptoDeposits` | boolean | User has made crypto deposits on your platform. |
+| `registrationDate` | string (ISO 8601) | When the user registered on your platform. Older accounts get a small trust boost. |
+| `kycHash` | string | Opaque hash you compute from the user's KYC identifiers. Used by AssetPay to detect when a single verified identity links to multiple Steam accounts. |
 
 Having both `fiatDeposits` and `cryptoDeposits` as `true` combined with `kycLevel: 3` gives the highest collateral multiplier. The `clientData` is updated on every authentication call, so pass current values each time.
 
@@ -84,6 +86,7 @@ The generated JWT contains:
 **Payload:**
 ```json
 {
+  "merchantId": "your-merchant-id",
   "client": {
     "steamID": "76561198012345678",
     "tradeUrl": "https://steamcommunity.com/tradeoffer/new/?partner=...",
@@ -94,6 +97,8 @@ The generated JWT contains:
   "exp": 1741086000
 }
 ```
+
+The `merchantId` claim and the JWT header `userId` field both carry the merchant ID. AssetPay uses either to look up your API secret during verification.
 
 ## Rate Limits
 
@@ -110,3 +115,4 @@ The generated JWT contains:
 | 1900 | `MISSING_API_KEY` | No `api-key` header provided |
 | 1901 | `INVALID_API_KEY` | API key not found or invalid |
 | 1903 | `API_KEY_SCOPE_DENIED` | Key doesn't have `CORE_ACCESS` scope |
+| 1915 | `NO_API_SECRET_CONFIGURED` | Merchant has no active API secret to sign the client token with |

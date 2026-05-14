@@ -48,9 +48,9 @@ Linking is also a security mechanism. If any linked account triggers a deposit r
 | Code | Key | When |
 |------|-----|------|
 | 2301 | `VERIFICATION_ALREADY_VERIFIED` | Client is already at level 1 |
-| 2304 | `VERIFICATION_BANNED_IDENTITY` | The matched identity is banned |
+| 2103 | `CLIENT_USER_NOT_FOUND` | No `ClientUser` record exists for this Steam ID yet |
 | 2305 | `VERIFICATION_ACCOUNT_CAP_REACHED` | Identity has reached its max-linked-accounts limit |
 | 2306 | `VERIFICATION_ALREADY_LINKED` | Client is already linked to an identity |
 | 2310 | `VERIFICATION_EMAIL_REQUIRED` | No email on the client — pass one in `/start` first |
-| 2312 | `VERIFICATION_LINK_FAILED` | No verified identity matches the email |
+| 2312 | `VERIFICATION_LINK_FAILED` | No verified identity matches the email, or the matched identity is banned |
 | 1102 | `INVALID_TOKEN` | Client token is invalid or expired |

@@ -172,11 +172,15 @@ AssetPay takes privacy seriously in the verification flow:
 | 2300 | `VERIFICATION_NOT_AVAILABLE` | Verification is not enabled yet |
 | 2301 | `VERIFICATION_ALREADY_VERIFIED` | Account is already at level 1 |
 | 2302 | `VERIFICATION_IN_PROGRESS` | Active process exists (wait 30 min or complete it) |
+| 2303 | `VERIFICATION_PROCESS_NOT_FOUND` | Verification process not found |
 | 2304 | `VERIFICATION_BANNED_IDENTITY` | This identity has been banned |
 | 2305 | `VERIFICATION_ACCOUNT_CAP_REACHED` | Too many accounts linked to this identity |
 | 2306 | `VERIFICATION_ALREADY_LINKED` | Account is already linked to an identity |
+| 2307 | `VERIFICATION_IDENTITY_NOT_FOUND` | Verified identity not found (admin lookup paths) |
+| 2308 | `VERIFICATION_SIGNICAT_ERROR` | Verification provider returned an error |
 | 2310 | `VERIFICATION_EMAIL_REQUIRED` | Email is needed for linking (pass it in `/start`) |
-| 2312 | `VERIFICATION_LINK_FAILED` | No matching identity found for email |
+| 2311 | `VERIFICATION_NOT_LINKED` | Account does not have a linked identity |
+| 2312 | `VERIFICATION_LINK_FAILED` | No matching identity, identity banned, or generic link failure |
 
 ## Integration Checklist
 

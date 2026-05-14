@@ -1,0 +1,90 @@
+---
+title: "Sell Items (Self-Trade)"
+description: "Merchant sells skins from a Steam account to AssetPay in exchange for USD wallet credit."
+---
+
+# POST /secure/sell
+
+Merchant-facing equivalent of [`POST /client/trading/deposit`](/api-reference/trading/deposit). Initiates a deposit trade where AssetPay receives the skins via Steam trade offer and credits the merchant's USD wallet. There is no end-user — the trade URL is supplied per-request.
+
+**Authentication:** Merchant API Key (`api-key` header)
+**Scope:** `CORE_ACCESS`
+
+## Request
+
+```http
+POST https://api.assetpay.gg/secure/sell
+Content-Type: application/json
+api-key: ap_...
+
+{
+  "tradeUrl": "https://steamcommunity.com/tradeoffer/new/?partner=12345&token=ABCDEFGH",
+  "items": [
+    { "itemId": "a1b2c3d4-...", "price": 10.75 }
+  ],
+  "game": "730",
+  "externalId": "self_sell_001",
+  "isInstant": true
+}
+```
+
+### Body Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `tradeUrl` | string | Yes | Steam trade URL of the account selling the items |
+| `items` | array | Yes | Items to sell (min 1, max 250) |
+| `items[].itemId` | string | Yes | Item ID from `/secure/inventory` |
+| `items[].price` | number | Yes | Offer price in USD. Must match the current offer price. |
+| `items[].amount` | number | No | Quantity for stackable Rust items (default `1`) |
+| `game` | string | No | `"730"` or `"252490"`. Defaults to `"730"`. |
+| `externalId` | string | No | Your unique tracking ID |
+| `isInstant` | boolean | No | Request instant credit (default `true`) |
+
+## Response
+
+Returns a full [`Trade`](/reference/types#trade) object with `source: "self"`. Self-trades are always treated as fully trusted — `preCredit` equals `totalPrice` and there is no collateral.
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": {
+    "id": "trade-uuid",
+    "type": "deposit",
+    "source": "self",
+    "status": "initiated",
+    "game": "730",
+    "externalId": "self_sell_001",
+    "merchantId": "merchant-uuid",
+    "clientSteamID": "76561198012345678",
+    "clientTradeUrl": "https://steamcommunity.com/tradeoffer/new/?partner=12345&token=ABCDEFGH",
+    "items": [ /* ... */ ],
+    "totalPrice": 10.75,
+    "preCredit": 10.75,
+    "pendingCredit": 0,
+    "isInstant": true,
+    "collateral": { "merchant": 0, "provider": 0 },
+    "createdAt": "2026-05-14T12:00:00.000Z",
+    "updatedAt": "2026-05-14T12:00:00.000Z"
+  }
+}
+```
+
+## Differences from `/client/trading/deposit`
+
+- Risk evaluation is **skipped** — merchant self-trades are fully trusted, so `preCredit` always equals `totalPrice` and `pendingCredit` is `0`.
+- The per-client active/rolling deposit guard does **not** run on this route — only the per-merchant tier throttle limits self-trades.
+- The trade is persisted with `source: "self"`, and the API response carries that field so you can distinguish self-trades from client trades.
+- Webhooks still fire on every state change.
+
+## Rate Limits
+
+| Merchant Status | Limit |
+|----------------|-------|
+| Verified | 5,000 requests / min |
+| Unverified | 50 requests / min |
+
+## Errors
+
+Same set as [`POST /client/trading/deposit`](/api-reference/trading/deposit#errors) minus `TOO_MANY_ACTIVE_TRADES` (per-client guard never runs). `RATE_LIMITED` (1005) can still fire if the merchant-tier limits above are exceeded. `INVALID_TRADEURL` (13) is common if the supplied `tradeUrl` is malformed.

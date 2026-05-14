@@ -1,18 +1,18 @@
 ---
 title: "Get Trade History"
-description: "Fetch a user's trade history with filtering and pagination."
+description: "Fetch a user's trade history with cursor-based pagination."
 ---
 
 # GET /client/trades
 
-Returns the trade history for the authenticated client. Supports filtering by type and game, plus pagination.
+Returns the trade history for the authenticated client. Supports filtering by type and game with cursor-based pagination.
 
 **Authentication:** Client Token (`Authorization` header)
 
 ## Request
 
 ```http
-GET https://api.assetpay.gg/client/trades?type=deposit&game=730&page=1&limit=10
+GET https://api.assetpay.gg/client/trades?type=deposit&game=730&limit=20
 Authorization: CLIENT_TOKEN
 ```
 
@@ -21,9 +21,9 @@ Authorization: CLIENT_TOKEN
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `type` | string | - | Filter by `"deposit"` or `"withdraw"` |
-| `game` | string | `730` | Game app ID |
-| `page` | number | `1` | Page number |
-| `limit` | number | `10` | Trades per page |
+| `game` | string | `730` | Game app ID (`"730"` = CS2, `"252490"` = Rust) |
+| `cursor` | string | - | Opaque cursor from a previous response's `nextCursor`. Omit on the first page. |
+| `limit` | number | `20` | Trades per page (min 1, max 100) |
 
 ## Response
 
@@ -36,6 +36,7 @@ Authorization: CLIENT_TOKEN
       {
         "id": "trade-uuid",
         "type": "deposit",
+        "source": "client",
         "status": "completed",
         "game": "730",
         "externalId": "dep_123",
@@ -45,12 +46,13 @@ Authorization: CLIENT_TOKEN
         "clientTradeUrl": "https://steamcommunity.com/tradeoffer/new/?partner=...",
         "items": [
           {
-            "id": "item-uuid",
+            "id": "encoded-item-id",
             "name": "AK-47 | Redline",
             "marketHashName": "AK-47 | Redline (Field-Tested)",
             "offer": {
               "price": 10.75,
-              "reference": "ref_abc123"
+              "reference": "ref_abc123",
+              "accepted": true
             }
           }
         ],
@@ -63,12 +65,7 @@ Authorization: CLIENT_TOKEN
         "updatedAt": "2026-03-11T10:00:00.000Z"
       }
     ],
-    "pagination": {
-      "page": 1,
-      "limit": 10,
-      "total": 156,
-      "totalPages": 16
-    }
+    "nextCursor": "eyJjcmVhdGVkQXQiOiIyMDI2LTAzLTA0VDEwOjAwOjAwLjAwMFoiLCJpZCI6InRyYWRlLXV1aWQifQ"
   }
 }
 ```
@@ -77,11 +74,25 @@ Authorization: CLIENT_TOKEN
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `items` | [ITrade](/reference/types#itrade)[] | Array of trade objects |
-| `pagination.page` | number | Current page (1-indexed) |
-| `pagination.limit` | number | Items per page |
-| `pagination.total` | number | Total trades matching filters |
-| `pagination.totalPages` | number | Total page count |
+| `items` | [Trade](/reference/types#trade)[] | Array of trade objects, newest first |
+| `nextCursor` | string \| null | Opaque cursor for the next page. Pass it back in the `cursor` query parameter. `null` when there are no more results. |
+
+### Paginating
+
+```typescript
+let cursor: string | null = null;
+do {
+  const url = new URL('https://api.assetpay.gg/client/trades');
+  url.searchParams.set('type', 'deposit');
+  if (cursor) url.searchParams.set('cursor', cursor);
+  const res = await fetch(url, { headers: { Authorization: CLIENT_TOKEN } });
+  const { data } = await res.json();
+  for (const trade of data.items) {
+    // process trade
+  }
+  cursor = data.nextCursor;
+} while (cursor);
+```
 
 ## Rate Limits
 

@@ -1,0 +1,63 @@
+---
+title: "Get Item Listings (Self-Trade)"
+description: "View individual marketplace listings for one item type."
+---
+
+# GET /secure/market/item
+
+Merchant-facing equivalent of [`GET /client/market/item`](/api-reference/client/get-item-listings). Returns the available listings for a specific item type. Pass the listing `id` to [`POST /secure/buy`](/api-reference/secure/buy).
+
+**Authentication:** Merchant API Key (`api-key` header)
+**Scope:** `CORE_ACCESS`
+
+## Request
+
+```http
+GET https://api.assetpay.gg/secure/market/item?itemId=0cabcab6d22d2281&delivery=any&page=1&perPage=50
+api-key: ap_...
+```
+
+### Query Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `itemId` | string | Required | Item type ID (from `/secure/market`) |
+| `delivery` | string | `any` | `"any"`, `"standard"` (trade-offer), or `"instant"` |
+| `page` | number | `1` | Page number |
+| `perPage` | number | `50` | Listings per page (max `100`) |
+
+## Response
+
+Same shape as [`GET /client/market/item`](/api-reference/client/get-item-listings#response). Each listing carries `offer.price`, `offer.reference`, `offer.delivery`, and any sticker/charm/float details.
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": [
+    {
+      "id": "listing-uuid-1",
+      "marketHashName": "AK-47 | Redline (Field-Tested)",
+      "offer": {
+        "price": 10.50,
+        "reference": "ref_listing_001",
+        "delivery": "standard"
+      },
+      "wear": "0.15234",
+      "paintSeed": 123,
+      "stickers": []
+    }
+  ]
+}
+```
+
+<Note>
+The `delivery` filter is applied **after** the upstream fetch. A request for `perPage=50` may return fewer than 50 items when filtering by `standard` or `instant`, because the upstream marketplace doesn't filter at fetch time.
+</Note>
+
+## Rate Limits
+
+| Merchant Status | Limit |
+|----------------|-------|
+| Verified | 6,000 requests / min |
+| Unverified | 100 requests / min |

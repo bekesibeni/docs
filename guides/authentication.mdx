@@ -81,6 +81,7 @@ import { SignJWT } from 'jose';
 const secretKey = new TextEncoder().encode(YOUR_API_SECRET);
 
 const token = await new SignJWT({
+  merchantId: YOUR_MERCHANT_ID,
   client: {
     steamID: '76561198012345678',
     tradeUrl: 'https://steamcommunity.com/tradeoffer/new/?partner=12345678&token=AbCdEfGh',
@@ -89,20 +90,20 @@ const token = await new SignJWT({
       totalWager: 5000,
       kycLevel: 2,
       fiatDeposits: true,
-      cryptoDeposits: false
-    }
-  }
+      cryptoDeposits: false,
+    },
+  },
 })
   .setProtectedHeader({
     alg: 'HS256',
-    userId: YOUR_MERCHANT_ID
+    userId: YOUR_MERCHANT_ID,
   })
   .setIssuedAt()
   .setExpirationTime('24h')
   .sign(secretKey);
 ```
 
-The `userId` in the header is your merchant ID. If you don't know it, contact support or check your dashboard.
+The token contains `merchantId` as a top-level claim and also carries it in the JWT header `userId` field so AssetPay can look up your API secret during verification. If you don't know your merchant ID, contact support or check your dashboard.
 
 <Info>
 Both methods produce identical tokens. The only difference is whether AssetPay's server or your server does the signing. Local generation saves one network call per user session.
@@ -143,7 +144,7 @@ This means the typical architecture looks like:
     The user's browser uses the client token to fetch inventory, browse the market, and initiate trades.
   </Step>
   <Step title="AssetPay calls your backend">
-    For withdrawals, AssetPay sends an `initiated` callback to your backend. Your backend validates the user's balance, deducts it, and responds with `200` to approve the purchase. To reject, respond with `{ "action": "reject" }`.
+    For withdrawals, AssetPay sends an `initiated` callback to your backend. Your backend validates the user's balance, deducts it, and responds with `2xx` to approve the purchase. To reject, respond with `4xx` (e.g. `402 Payment Required`).
   </Step>
   <Step title="Your backend processes results">
     As the trade progresses, your backend receives callbacks for each status change. Credit balances on `completed`, handle refunds on `failed` or `reverted`.
@@ -160,13 +161,14 @@ Your API key (`ap_...`) should stay on your backend. It's used for merchant-leve
 
 ## API Key Scopes
 
-Your API key needs the `CORE_ACCESS` scope to authenticate clients, check trade URLs, and fetch prices. This is the default scope for new keys.
-
-Available scopes relevant to trading:
+Your API key needs the `CORE_ACCESS` scope to authenticate clients and use the `/secure/*` endpoints. Available scopes:
 
 | Scope | Grants access to |
 |-------|-----------------|
-| `CORE_ACCESS` | Client authentication, trade URL checks, price fetching |
-| `READ_ONLY` | All read-only endpoints |
+| `CORE_ACCESS` | Client authentication (`/auth/authenticate-client`), trade URL checks, prices, the `/secure/*` merchant self-trade endpoints, and read-only trade queries |
+| `DEPOSITS_WRITE` | Reserved for write operations on deposit-related resources |
+| `WITHDRAWALS_WRITE` | Reserved for write operations on withdrawal-related resources |
+| `LEDGER_READ` | Reserved for ledger / accounting endpoints |
+| `PROFILE_READ` | Reserved for merchant profile reads |
 
 You can manage scopes and rotate keys from your dashboard.

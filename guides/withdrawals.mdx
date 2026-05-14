@@ -23,13 +23,13 @@ A withdrawal is when a user buys a skin from the market using their balance on y
     Before purchasing anything, AssetPay sends an `initiated` callback to your backend. This is where you check the user's balance and approve or reject the trade.
   </Step>
   <Step title="Your backend approves or rejects">
-    If the user has enough balance: deduct it and respond with `200`. AssetPay proceeds with the purchase. If not: respond with `4xx` (e.g. `402`) and the trade is cancelled.
+    If the user has enough balance: deduct it and respond `2xx`. AssetPay proceeds with the purchase. If not: respond with `4xx` (e.g. `402`) and the trade is marked `failed`.
   </Step>
-  <Step title="Item purchased">
-    AssetPay buys the item from the supplier. The trade moves through `active` to `hold`.
+  <Step title="Item purchased and delivered">
+    AssetPay sources the item from the supplier and the Steam trade offer is sent to and accepted by the user. The trade moves to `hold` for the 7-day Steam reversal-protection window.
   </Step>
-  <Step title="Delivered">
-    The item is sent to the user via Steam trade offer. After the hold period, the trade reaches `completed`.
+  <Step title="Completed">
+    After the hold period, the trade reaches `completed`. No further action needed.
   </Step>
 </Steps>
 
@@ -44,13 +44,7 @@ Authorization: CLIENT_TOKEN
 
 {
   "items": [
-    {
-      "itemId": "e5f6g7h8-...",
-      "offer": {
-        "price": 45.00,
-        "reference": "ref_market_789"
-      }
-    }
+    { "itemId": "e5f6g7h8-...", "price": 45.00 }
   ],
   "game": "730",
   "externalId": "wd_unique_789"
@@ -63,8 +57,8 @@ Authorization: CLIENT_TOKEN
 |-------|------|----------|-------------|
 | `items` | array | Yes | Array of items to withdraw (min 1, max 50) |
 | `items[].itemId` | string | Yes | Item ID from the market response |
-| `items[].offer.price` | number | Yes | The offer price in USD (max \$100,000) |
-| `items[].offer.reference` | string | Yes | The offer reference from market data |
+| `items[].price` | number | Yes | Purchase price in USD (max \$100,000). Validated against the current marketplace price. |
+| `items[].amount` | number | No | Quantity for stackable items (default: 1, max: 10000) |
 | `game` | string | No | `"730"` (CS2) or `"252490"` (Rust). Defaults to `"730"`. |
 | `externalId` | string | No | Your unique tracking ID (max 128 chars) |
 
@@ -77,6 +71,7 @@ Authorization: CLIENT_TOKEN
   "data": {
     "id": "trade-uuid",
     "type": "withdraw",
+    "source": "client",
     "status": "initiated",
     "game": "730",
     "externalId": "wd_unique_789",
@@ -87,7 +82,8 @@ Authorization: CLIENT_TOKEN
         "marketHashName": "AWP | Asiimov (Field-Tested)",
         "offer": {
           "price": 45.00,
-          "reference": "ref_market_789"
+          "reference": "ref_market_789",
+          "delivery": "standard"
         },
         "status": "initiated"
       }
@@ -103,15 +99,18 @@ Authorization: CLIENT_TOKEN
 
 This is the most important callback in the entire system. When a user initiates a withdrawal, AssetPay does **not** start purchasing immediately. Instead, it sends an `initiated` callback to your backend and waits for your response.
 
+The approval callback uses a slightly different envelope than regular state callbacks — see [Callbacks](/guides/callbacks#the-initiated-callback-for-withdrawals) for the exact body shape and signature format.
+
 Your backend should:
-1. Look up the user by `trade.clientSteamID` or `trade.externalClientUserId`
-2. Check if they have enough balance for `trade.totalPrice`
-3. If yes: deduct the balance and respond with HTTP `200`
-4. If no: respond with HTTP `4xx` (e.g. `402`) to reject
+1. Verify the `X-AssetPay-Signature` header
+2. Look up the user by `trade.clientSteamID` or `trade.externalClientUserId`
+3. Check if they have enough balance for `trade.totalPrice`
+4. If yes: deduct the balance and respond with HTTP `2xx`
+5. If no: respond with HTTP `4xx` (e.g. `402`) to reject
 
 ### Approving a withdrawal
 
-Just respond with `200` and an empty body (or any body that isn't a rejection). AssetPay takes that as approval and starts the purchase.
+Respond with `200` and an empty body (or any body that isn't a rejection signal). AssetPay takes that as approval and starts the purchase.
 
 ### Rejecting a withdrawal
 
@@ -126,31 +125,37 @@ Content-Type: application/json
 
 The `reason` field is optional but useful for debugging. Any `4xx` status (400, 402, 403, 409, etc.) is treated as a rejection.
 
-**Legacy (still supported):** Respond with `200` and a rejection body like `{ "action": "reject" }`.
+**Alternative formats (still supported):** A `200` response with one of these bodies is also treated as a rejection:
+- `{ "action": "reject", "reason": "..." }`
+- `{ "status": "rejected" }`
+- `{ "errorCode": "INSUFFICIENT_BALANCE" }`
+- `{ "code": "INSUFFICIENT_BALANCE" }`
 
-Both approaches cancel the trade, mark it as `failed`, and refund your merchant wallet automatically. You'll receive a follow-up `failed` callback.
+All rejection paths mark the trade as `failed` and refund your merchant wallet automatically. You'll receive a follow-up `failed` callback.
 
 <Warning>
-`5xx` responses and timeouts are **not** treated as rejections. They are treated as delivery failures and retried up to 10 times. Make sure your rejection logic returns `4xx`, not `5xx`.
+`5xx` responses and timeouts are **not** treated as rejections. They are treated as delivery failures and retried with the standard webhook backoff. Make sure your rejection logic returns `4xx`, not `5xx`.
 </Warning>
 
 ## Balance Handling for Withdrawals
 
-| Event | What your backend should do |
-|-------|--------|
-| `initiated` | Check user balance, deduct it, respond `200` to approve. Or reject. |
-| `active` | Item purchased from supplier. Acknowledge with `200`. |
-| `hold` | Item being delivered. Acknowledge with `200`. |
+| `trade.status` | What your backend should do |
+|----------------|--------|
+| `initiated` | Check user balance, deduct it, respond `2xx` to approve. Or reject with `4xx`. |
+| `hold` | Item sourced from supplier, Steam trade offer accepted by the user, 7-day hold running. Acknowledge with `200`. |
 | `completed` | Delivery complete. No balance action needed. |
-| `failed` | Refund `totalPrice` to the user's balance. |
-| `reverted` | Refund `totalPrice` to the user. Check `revertedBy` to see who cancelled. |
+| `failed` | Trade did not go through. Refund `totalPrice` if you previously deducted it. |
+| `canceled` | Trade canceled before processing. Refund `totalPrice` if you previously deducted it. |
+| `reverted` | A completed withdrawal was reversed. Refund `totalPrice`. Check `revertedBy`. |
+
+Withdrawals do **not** pass through an `active` state — once the supplier purchase succeeds and the Steam offer is accepted, the trade jumps straight from `initiated` to `hold`.
 
 ### Trade Reversals
 
 In rare cases, a completed withdrawal can be reversed. This happens when either the supplier or the user cancels the Steam trade after acceptance. The trade object includes a `revertedBy` field:
 
-- `"supplier"` - the marketplace supplier reversed the trade
-- `"user"` - the user declined or cancelled the trade offer
+- `"supplier"` — the marketplace supplier reversed the trade
+- `"user"` — the user declined or cancelled the trade offer
 
 When a withdrawal is reverted, your merchant wallet is automatically refunded by AssetPay.
 
@@ -161,11 +166,10 @@ For multi-item withdrawals, each item in the `items` array carries its own `stat
 | Status | Meaning |
 |--------|---------|
 | `initiated` | Purchase not started yet |
-| `pending` | Being purchased from supplier |
-| `active` | Purchased, trade offer being sent |
-| `hold` | Trade offer sent, waiting for acceptance |
-| `completed` | Item delivered successfully |
-| `failed` | Purchase failed for this item |
+| `hold` | Item delivered to user, hold period running |
+| `completed` | Item delivered successfully and hold cleared |
+| `failed` | Purchase or delivery failed for this item |
+| `canceled` | Trade canceled before processing |
 | `reverted` | Trade was reversed for this item |
 
 This lets you show per-item progress in your UI for multi-item withdrawals.

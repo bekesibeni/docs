@@ -12,7 +12,7 @@ Returns individual listings for a specific item. Use this when you want to let u
 ## Request
 
 ```http
-GET https://api.assetpay.gg/client/market/item?itemId=AK-47%20%7C%20Redline%20(Field-Tested)&delivery=normal&page=1
+GET https://api.assetpay.gg/client/market/item?itemId=marketplace-item-id&delivery=any&page=1
 Authorization: CLIENT_TOKEN
 ```
 
@@ -20,9 +20,10 @@ Authorization: CLIENT_TOKEN
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `itemId` | string | Required | Market hash name or item ID |
-| `delivery` | string | `normal` | `"normal"` or `"auto"` delivery mode |
+| `itemId` | string | Required | Marketplace item ID. For CS2 listings, this is the Skinshark item identifier returned by `/client/market`. |
+| `delivery` | string | `any` | `"any"`, `"standard"` (bot sources from supplier and sends trade offer) or `"instant"` (immediate delivery from pre-positioned stock). Filters listings by delivery mode. |
 | `page` | number | `1` | Page number |
+| `perPage` | number | `50` | Listings per page (max 100) |
 
 ## Response
 
@@ -38,12 +39,11 @@ Authorization: CLIENT_TOKEN
       "type": "Rifle",
       "iconUrl": "IzMF03bk9WpSBq-S-ekoE33L-iLqGFHVaU25ZzQNQcXdA3g5gMEPvUZZEfSMJ6dESN8p_2SVTY7V2N4MxGVIwXpaL3_a3Hh...",
       "appid": 730,
-      "contextid": 2,
       "tradable": true,
       "offer": {
         "price": 10.50,
         "reference": "ref_listing_001",
-        "delivery": "normal"
+        "delivery": "standard"
       },
       "exterior": "Field-Tested",
       "wear": "0.15234",
@@ -51,6 +51,7 @@ Authorization: CLIENT_TOKEN
       "stickers": [
         {
           "name": "iBUYPOWER | Katowice 2014",
+          "marketHashName": "Sticker | iBUYPOWER | Katowice 2014",
           "slot": 0,
           "wear": 0,
           "iconUrl": "IzMF03bi9WpSBq-S-ekoE33L-iLqGFHVaU25Zzc..."
@@ -61,10 +62,12 @@ Authorization: CLIENT_TOKEN
       "id": "listing-uuid-2",
       "name": "AK-47 | Redline",
       "marketHashName": "AK-47 | Redline (Field-Tested)",
+      "appid": 730,
+      "tradable": true,
       "offer": {
         "price": 9.80,
         "reference": "ref_listing_002",
-        "delivery": "normal"
+        "delivery": "instant"
       },
       "wear": "0.35678",
       "paintSeed": 456,
@@ -74,11 +77,15 @@ Authorization: CLIENT_TOKEN
 }
 ```
 
-Each listing represents a specific item instance with its own float value, stickers, and price. Use the `id`, `offer.price`, and `offer.reference` when initiating a withdrawal.
+Each listing represents a specific item instance with its own float value, stickers, and price. Use the `id` and `offer.price` when initiating a withdrawal.
+
+<Note>
+This endpoint is currently CS2-only. Rust withdrawals don't use per-variant listings — the cheapest available stack is sourced when the withdrawal is purchased.
+</Note>
 
 ## Rate Limits
 
 | Merchant Status | Limit |
 |----------------|-------|
-| Verified | 2,000 requests / min |
-| Unverified | 20 requests / min |
+| Verified | 600 requests / min |
+| Unverified | 30 requests / min |

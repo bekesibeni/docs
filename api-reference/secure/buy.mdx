@@ -1,0 +1,92 @@
+---
+title: "Buy Items (Self-Trade)"
+description: "Merchant buys skins from the marketplace, delivered to a Steam account."
+---
+
+# POST /secure/buy
+
+Merchant-facing equivalent of [`POST /client/trading/withdraw`](/api-reference/trading/withdraw). AssetPay sources the listings from the upstream marketplace and delivers them to the supplied `tradeUrl`. The merchant's USD wallet is debited.
+
+**Authentication:** Merchant API Key (`api-key` header)
+**Scope:** `CORE_ACCESS`
+
+## Request
+
+```http
+POST https://api.assetpay.gg/secure/buy
+Content-Type: application/json
+api-key: ap_...
+
+{
+  "tradeUrl": "https://steamcommunity.com/tradeoffer/new/?partner=12345&token=ABCDEFGH",
+  "items": [
+    { "itemId": "e5f6g7h8-...", "price": 45.00 }
+  ],
+  "game": "730",
+  "externalId": "self_buy_001"
+}
+```
+
+### Body Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `tradeUrl` | string | Yes | Steam trade URL of the account receiving the items |
+| `items` | array | Yes | Items to buy (min 1, max 50) |
+| `items[].itemId` | string | Yes | Listing ID from `/secure/market/item` |
+| `items[].price` | number | Yes | Purchase price in USD (max $100,000). Must equal the current listing price. |
+| `game` | string | No | `"730"` or `"252490"`. Defaults to `"730"`. |
+| `externalId` | string | No | Your unique tracking ID |
+
+## Response
+
+Returns a full [`Trade`](/reference/types#trade) object with `source: "self"`.
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": {
+    "id": "trade-uuid",
+    "type": "withdraw",
+    "source": "self",
+    "status": "initiated",
+    "game": "730",
+    "externalId": "self_buy_001",
+    "merchantId": "merchant-uuid",
+    "clientSteamID": "76561198012345678",
+    "clientTradeUrl": "https://steamcommunity.com/tradeoffer/new/?partner=12345&token=ABCDEFGH",
+    "items": [ /* ... */ ],
+    "totalPrice": 45.00,
+    "createdAt": "2026-05-14T12:00:00.000Z",
+    "updatedAt": "2026-05-14T12:00:00.000Z"
+  }
+}
+```
+
+## How the wallet debit works
+
+The merchant's available wallet balance must cover `totalPrice` at the time of the call. The funds are locked immediately; on failure they're released, on success the sourcing portion settles to HOUSE and the AssetPay fee to HOUSE_FEES.
+
+## The `initiated` approval callback also fires
+
+`/secure/buy` reuses the same approval pipeline as the client withdraw flow. After the trade is created (status `initiated`), AssetPay sends an [approval callback](/guides/callbacks#the-initiated-callback-for-withdrawals) to your registered callback URL with `trade.source === "self"`. The trade does not proceed until you respond.
+
+- To auto-approve all your own self-trades, return `2xx` whenever `trade.source === "self"` in your handler.
+- To reject (e.g. dry-run mode or operational kill-switch), respond with `4xx` and the trade is failed and the wallet lock is released.
+- Self-trade buys still **require an active callback URL** on the merchant account — calling this endpoint without one fails immediately with `MERCHANT_NO_CALLBACK_URL` (1705).
+
+<Warning>
+This is different from `/secure/sell`, where there is no merchant-approval step at all. For `/secure/buy`, your callback handler must explicitly approve self-trades — there is no built-in bypass.
+</Warning>
+
+## Rate Limits
+
+| Merchant Status | Limit |
+|----------------|-------|
+| Verified | 5,000 requests / min |
+| Unverified | 50 requests / min |
+
+## Errors
+
+Same set as [`POST /client/trading/withdraw`](/api-reference/trading/withdraw#errors). Common: `MERCHANT_BALANCE_LOW` (12), `MERCHANT_NO_CALLBACK_URL` (1705), `LISTING_NOT_FOUND` (14), `PRICE_CHANGED` (11), `INVALID_TRADEURL` (13).

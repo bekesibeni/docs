@@ -1,0 +1,61 @@
+---
+title: "List Self-Trades"
+description: "Cursor-paginated history of trades initiated via /secure/buy and /secure/sell."
+---
+
+# GET /secure/trades
+
+Returns trades the merchant initiated through `/secure/sell` or `/secure/buy`. End-user (client) trades are **not** included on this endpoint — clients can fetch their own trade history via `/client/trades` with a client token.
+
+**Authentication:** Merchant API Key (`api-key` header)
+**Scope:** `CORE_ACCESS`
+
+## Request
+
+```http
+GET https://api.assetpay.gg/secure/trades?limit=20&type=deposit&game=730
+api-key: ap_...
+```
+
+### Query Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `cursor` | string | — | Cursor from previous page's `nextCursor` |
+| `limit` | number | `20` | Page size (max `100`) |
+| `type` | string | — | Filter by `"deposit"` or `"withdraw"` |
+| `game` | string | `"730"` | Filter by game ID |
+
+## Response
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "trade-uuid-1",
+        "type": "deposit",
+        "source": "self",
+        "status": "completed",
+        "game": "730",
+        "items": [ /* ... */ ],
+        "totalPrice": 10.75,
+        "createdAt": "2026-05-14T11:30:00.000Z",
+        "updatedAt": "2026-05-14T11:35:00.000Z"
+      }
+    ],
+    "nextCursor": "eyJjcmVhdGVkQXQi..."
+  }
+}
+```
+
+Every item has `source: "self"`. Use `nextCursor` to fetch the next page; `null` means the list is exhausted.
+
+## Rate Limits
+
+| Merchant Status | Limit |
+|----------------|-------|
+| Verified | 3,000 requests / min |
+| Unverified | 100 requests / min |

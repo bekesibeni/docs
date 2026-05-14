@@ -29,28 +29,29 @@ Response:
         "type": "Rifle",
         "iconUrl": "IzMF03bk9WpSBq-S-ekoE33L-iLqGFHVaU25ZzQNQcXdA3g5gMEPvUZZEfSMJ6dESN8p_2SVTY7V2N4MxGVIwXpaL3_a3Hh...",
         "appid": 730,
-        "contextid": 2,
         "tradable": true,
-        "accepted": true,
         "marketPrice": 12.50,
         "offer": {
           "price": 10.75,
           "reference": "ref_abc123",
+          "accepted": true,
           "maxAmount": 1
         },
         "exterior": "Field-Tested",
         "wear": "0.25432",
         "rarity": "Classified",
         "color": "#D32CE6",
+        "paintSeed": 312,
+        "propId": "S76561198012345678A12345678D8888888888888888888",
         "stickers": [
           {
-            "name": "NaVi | Katowice 2019",
+            "name": "Natus Vincere | Katowice 2019",
+            "marketHashName": "Sticker | Natus Vincere | Katowice 2019",
             "slot": 0,
             "wear": 0.05,
             "iconUrl": "IzMF03bi9WpSBq-S-ekoE33L-iLqGFHVaU25Zzc..."
           }
-        ],
-        "paintSeed": 312
+        ]
       }
     ],
     "count": 42,
@@ -64,14 +65,14 @@ Response:
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `game` | number | `730` | Game app ID (`730` for CS2, `252490` for Rust) |
+| `game` | string | `730` | Game app ID (`"730"` for CS2, `"252490"` for Rust) |
 | `refresh` | boolean | `false` | Force-refresh from Steam instead of using cache |
-| `search` | string | - | Filter items by name |
-| `sort` | string | - | Sort order for results |
+| `search` | string | - | Filter items by name (max 100 chars) |
+| `sort` | string | - | `relevance`, `priceAsc`, `priceDesc`, `nameAsc`, or `nameDesc` |
 | `minPrice` | number | - | Minimum offer price filter (USD) |
 | `maxPrice` | number | - | Maximum offer price filter (USD) |
 | `page` | number | `1` | Page number |
-| `limit` | number | `50` | Items per page |
+| `limit` | number | `50` | Items per page (use `-1` to disable pagination) |
 
 ## Understanding the Response
 
@@ -79,13 +80,13 @@ Response:
 
 Each item can have two price fields, and they mean different things:
 
-- **`marketPrice`** is the BUFF163 market reference price in USD. This is not what the user gets paid. Use it to show market value context in your UI.
+- **`marketPrice`** is the market reference price in USD. This is not what the user gets paid. Use it to show market value context in your UI.
 - **`offer.price`** is the actual amount in USD the user will receive for depositing this item. This is the number that matters for your balance calculations.
-- **`offer.reference`** is an opaque string you must pass back when initiating the deposit. It identifies the specific offer.
+- **`offer.reference`** is an opaque marketplace identifier. AssetPay uses it internally; you don't need to pass it back.
 
-### The `accepted` Field
+### The `offer.accepted` Field
 
-Items where `accepted` is `true` have a valid offer and can be deposited. Items where it's `false` or missing don't have an active buyer and can't be deposited right now.
+Items where `offer.accepted` is `true` have a valid offer and can be deposited. Items where it's `false` or the `offer` is missing entirely don't have an active buyer and can't be deposited right now.
 
 ### Collateral
 
@@ -125,7 +126,7 @@ Rust items work the same way, but they can be stackable. When an item has an `am
 You can combine query parameters to build a search UI:
 
 ```http
-GET https://api.assetpay.gg/client/inventory?game=730&search=knife&minPrice=50&maxPrice=500&sort=price_asc
+GET https://api.assetpay.gg/client/inventory?game=730&search=knife&minPrice=50&maxPrice=500&sort=priceAsc
 Authorization: CLIENT_TOKEN
 ```
 

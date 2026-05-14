@@ -89,8 +89,7 @@ Response:
         },
         "exterior": "Field-Tested",
         "wear": "0.25432",
-        "appid": 730,
-        "contextid": 2
+        "appid": 730
       }
     ],
     "count": 42,
@@ -102,8 +101,7 @@ Response:
 
 Key fields:
 - `offer.price` is the price the user will receive (in USD) if they deposit this item
-- `offer.reference` must be passed back when initiating the deposit
-- `marketPrice` is the BUFF163 market reference price (not the trade price)
+- `marketPrice` is the market reference price (not the trade price)
 
 ## Step 3: Initiate a Deposit
 
@@ -116,13 +114,7 @@ Authorization: CLIENT_TOKEN
 
 {
   "items": [
-    {
-      "itemId": "a1b2c3d4-...",
-      "offer": {
-        "price": 10.75,
-        "reference": "ref_abc123"
-      }
-    }
+    { "itemId": "a1b2c3d4-...", "price": 10.75 }
   ],
   "game": "730",
   "externalId": "your-unique-tracking-id"
@@ -138,6 +130,7 @@ Response:
   "data": {
     "id": "trade-uuid-here",
     "type": "deposit",
+    "source": "client",
     "status": "initiated",
     "game": "730",
     "items": [...],
@@ -152,48 +145,50 @@ The trade is now in progress. A Steam trade offer will be sent to the user autom
 
 ## Step 4: Handle Callbacks
 
-As the trade progresses, AssetPay sends POST requests to your callback URL. Each callback contains the trade object, the event name, and an HMAC signature.
+As the trade progresses, AssetPay sends POST requests to your callback URL. The body is the trade object directly:
 
 ```json
 {
-  "payload": {
-    "trade": {
-      "id": "trade-uuid-here",
-      "type": "deposit",
-      "status": "completed",
-      "totalPrice": 10.75,
-      "items": [...]
-    },
-    "event": "completed",
-    "timestamp": "2026-03-11T10:05:00.000Z",
-    "key": "hmac_signature_hex"
+  "trade": {
+    "id": "trade-uuid-here",
+    "type": "deposit",
+    "source": "client",
+    "status": "completed",
+    "totalPrice": 10.75,
+    "items": [...]
   }
 }
 ```
 
+The signature is delivered in the `X-AssetPay-Signature` header (not in the body) and is computed over `<deliveryId>.<timestamp>.<rawBody>` with HMAC-SHA256.
+
 Your callback handler should:
 
 1. Verify the HMAC signature (see [Callbacks](/guides/callbacks))
-2. Credit the user's balance when status is `completed`
+2. Credit the user's balance when `trade.status === 'completed'`
 3. Respond with HTTP `200`
 
 ```javascript
-app.post('/assetpay/callback', (req, res) => {
-  const { trade, event, key } = req.body.payload;
+app.post(
+  '/assetpay/callback',
+  express.raw({ type: 'application/json' }),
+  (req, res) => {
+    const rawBody = req.body.toString('utf8');
+    if (!verifyAssetPaySignature(req.header('X-AssetPay-Signature'), rawBody, [YOUR_API_SECRET])) {
+      return res.status(401).send('Invalid signature');
+    }
+    const { trade } = JSON.parse(rawBody);
 
-  // Verify signature first
-  if (!verifySignature(trade, key, YOUR_API_SECRET)) {
-    return res.status(401).send('Invalid signature');
-  }
+    if (trade.type === 'deposit' && trade.status === 'completed') {
+      creditBalance(trade.clientSteamID, trade.totalPrice);
+    }
 
-  if (trade.type === 'deposit' && event === 'completed') {
-    // Credit the user's balance
-    creditBalance(trade.clientSteamID, trade.totalPrice);
-  }
-
-  res.status(200).send('OK');
-});
+    res.status(200).send('OK');
+  },
+);
 ```
+
+See [Callbacks](/guides/callbacks) for the full `verifyAssetPaySignature` implementation.
 
 That's it. You now have a working deposit flow. Head to the individual guides for full details on each part of the integration:
 

@@ -1,0 +1,85 @@
+---
+title: "Get Inventory (Self-Trade)"
+description: "Fetch any Steam account's inventory by trade URL."
+---
+
+# GET /secure/inventory
+
+Returns the Steam inventory for the account identified by the supplied `tradeUrl`. There is no client-authentication step on this path — the merchant API key authenticates the call, and the Steam account is derived per-request from the trade URL.
+
+**Authentication:** Merchant API Key (`api-key` header)
+**Scope:** `CORE_ACCESS`
+
+## Request
+
+```http
+GET https://api.assetpay.gg/secure/inventory?tradeUrl=https%3A%2F%2Fsteamcommunity.com%2Ftradeoffer%2Fnew%2F%3Fpartner%3D12345%26token%3DABCDEFGH&game=730&page=1&limit=50
+api-key: ap_...
+```
+
+### Query Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `tradeUrl` | string | Required | The Steam trade URL of the account whose inventory you want |
+| `game` | string | `730` | `"730"` (CS2) or `"252490"` (Rust) |
+| `refresh` | boolean | `false` | Force-refresh upstream cache |
+| `search` | string | — | Filter by item name (max 100 chars) |
+| `sort` | string | — | `relevance`, `priceAsc`, `priceDesc`, `nameAsc`, or `nameDesc` |
+| `minPrice` | number | — | Minimum offer price in USD |
+| `maxPrice` | number | — | Maximum offer price in USD |
+| `page` | number | `1` | Page number |
+| `limit` | number | `50` | Items per page (use `-1` to disable pagination) |
+
+## Response
+
+Same shape as [`GET /client/inventory`](/api-reference/client/get-inventory). Each item carries the `offer` block with the price AssetPay will pay if you call `/secure/sell` with that `itemId`.
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": {
+    "inventory": [
+      {
+        "id": "a1b2c3d4-...",
+        "name": "AK-47 | Redline",
+        "marketHashName": "AK-47 | Redline (Field-Tested)",
+        "appid": 730,
+        "tradable": true,
+        "marketPrice": 12.50,
+        "offer": {
+          "price": 10.75,
+          "reference": "12345678901",
+          "accepted": true
+        },
+        "exterior": "Field-Tested",
+        "wear": "0.25432",
+        "stickers": []
+      }
+    ],
+    "count": 47,
+    "updatedAt": "2026-05-14T12:00:00.000Z",
+    "collateral": 0
+  }
+}
+```
+
+`collateral` is always `0` for self-trade callers — instant credit isn't applicable when the merchant is trading with itself. See the [Instant Credit guide](/guides/instant-credit) for the client-flow behavior.
+
+## Rate Limits
+
+| Merchant Status | Limit |
+|----------------|-------|
+| Verified | 10,000 requests / min |
+| Unverified | 100 requests / min |
+
+## Errors
+
+| Code | Key | When |
+|------|-----|------|
+| 3 | `INVENTORY_FETCH_FAILED` | Couldn't load the Steam inventory (private, banned, rate-limited) |
+| 7 | `USER_NOT_TRADEABLE` | Steam returned 403 — inventory private or account can't trade |
+| 13 | `INVALID_TRADEURL` | The supplied `tradeUrl` is malformed |
+| 1010 | `NO_BOTS_AVAILABLE` | No Steam bots online; retry shortly |
+| 1011 | `FLEET_DEGRADED` | Steam fleet degraded; retry shortly |

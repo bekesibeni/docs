@@ -7,14 +7,15 @@ description: "TypeScript interfaces and enums used throughout the AssetPay API."
 
 All TypeScript types used in API responses. These are the shapes you'll work with when parsing responses and processing callbacks.
 
-## ITrade
+## Trade
 
 The main trade object returned by deposit/withdraw endpoints, trade history, and callbacks.
 
 ```typescript
-interface ITrade {
+interface Trade {
   id: string;                    // Unique trade ID (UUID)
   type: TradeType;               // "deposit" or "withdraw"
+  source: TradeSource;           // "client" or "self" (origin flow)
   status: TradeStatus;           // Current trade status
   game: string;                  // Game app ID ("730" or "252490")
 
@@ -25,7 +26,7 @@ interface ITrade {
   clientTradeUrl: string;        // User's Steam trade URL
 
   // Items and pricing
-  items: InventoryItem[];        // Items in this trade
+  items: Item[];                 // Items in this trade
   totalPrice: number;            // Total value in USD
 
   // Instant deposit fields (deposits only)
@@ -62,16 +63,15 @@ interface ITrade {
 }
 ```
 
-## InventoryItem
+## Item
 
 Represents a skin item in inventory, market, or trade responses. Some fields are only present in certain contexts.
 
 ```typescript
-interface InventoryItem {
+interface Item {
   // Identity
   id: string;                    // Encoded item ID
   appid: number;                 // Game app ID (730 or 252490)
-  contextid: number;             // Steam context ID (always 2)
 
   // Description
   name: string;                  // Display name (e.g. "AK-47 | Redline")
@@ -81,17 +81,11 @@ interface InventoryItem {
 
   // Trade state
   tradable: boolean;             // Whether the item can be traded
-  accepted?: boolean;            // Whether the item is accepted for deposit (inventory only)
   amount?: number;               // Stack count for Rust items
 
   // Pricing
-  marketPrice?: number;          // BUFF163 market reference price (USD)
-  offer?: {
-    price: number;               // Actual offer price (USD)
-    reference: string;           // Offer reference (pass back in deposit/withdraw)
-    delivery?: string;           // "normal" or "auto" (market items only)
-    maxAmount?: number;          // Max deposit quantity (inventory only)
-  };
+  marketPrice?: number;          // Market reference price (USD)
+  offer?: ItemOffer;             // See ItemOffer below
 
   // Cosmetic attributes
   exterior?: string;             // "Factory New", "Minimal Wear", etc.
@@ -99,6 +93,7 @@ interface InventoryItem {
   color?: string;                // Rarity color hex (e.g. "#EB4B4B")
   wear?: string;                 // Float value as string
   paintSeed?: number;            // Paint seed number
+  propId?: string;               // Steam inspect-link item_certificate (CS2)
   doppler?: Doppler;             // Doppler phase details
   fade?: Fade;                   // Fade percentage details
   hardened?: Hardened;           // Case Hardened pattern details
@@ -109,6 +104,20 @@ interface InventoryItem {
 
   // Withdrawal-specific (only set on items belonging to a withdraw trade)
   status?: TradeStatus;          // Per-item purchase status, mirrors Trade.status
+}
+```
+
+## ItemOffer
+
+The marketplace offer carried on an `Item.offer`:
+
+```typescript
+interface ItemOffer {
+  price: number;                 // Offer price in USD
+  reference: string;             // Marketplace listing reference (used internally)
+  delivery?: DeliveryMode;       // "standard" or "instant" (market items only)
+  maxAmount?: number;            // Max quantity for stackable items (inventory only)
+  accepted?: boolean;            // Whether the item is accepted for deposit (deposit-side inventory only)
 }
 ```
 
@@ -130,7 +139,6 @@ interface Sticker {
 interface Charm {
   name: string;                  // Charm display name
   marketHashName?: string;       // Charm's own market hash name, for deep-linking
-  pattern?: string;              // Pattern type
   iconUrl: string;               // Charm image URL
 }
 ```
@@ -176,16 +184,14 @@ All trade and item statuses are **lowercase** in API requests, responses, and we
 
 ```typescript
 type TradeStatus =
-  | 'initiated'   // Trade created, processing not started
-  | 'pending'     // Steam trade offer sent
-  | 'active'      // Trade offer accepted, transfer in progress
-  | 'escrow'      // Steam 2FA escrow hold
-  | 'hold'        // 7-day Steam hold period
+  | 'initiated'   // Trade created, processing not started (for withdrawals: awaiting merchant approval)
+  | 'active'      // (Deposits only) Steam trade offer sent to user, awaiting acceptance
+  | 'escrow'      // (Deposits only) Steam 2FA escrow hold
+  | 'hold'        // 7-day Steam hold period (CS2 only)
   | 'completed'   // Trade finished successfully
-  | 'failed'      // Trade failed
-  | 'canceled'    // Trade was cancelled before being processed
-  | 'reverted'    // Trade reversed after being active
-  | 'partial';    // Some items succeeded, others didn't
+  | 'failed'      // Trade failed at some point
+  | 'canceled'    // Trade was canceled before processing
+  | 'reverted';   // Previously completed trade was reversed
 ```
 
 ### TradeType
@@ -196,11 +202,31 @@ type TradeType =
   | 'withdraw';  // User buying items from market
 ```
 
+### TradeSource
+
+Indicates whether the trade originated from an end-user client flow or a merchant self-trade flow. Present on every trade in responses and callbacks.
+
+```typescript
+type TradeSource =
+  | 'client'    // Initiated by an end-user via /client/trading/*
+  | 'self';     // Merchant self-trade via /secure/sell or /secure/buy
+```
+
+### DeliveryMode
+
+Marketplace delivery type carried on `Item.offer.delivery` for listings.
+
+```typescript
+type DeliveryMode =
+  | 'standard'  // Trade-offer delivery (bot sources from a supplier and sends a Steam trade offer)
+  | 'instant';  // Instant delivery (item already pre-positioned with the bot)
+```
+
 ### RevertedBy
 
 ```typescript
 type RevertedBy =
-  | 'supplier'   // Marketplace supplier reversed
+  | 'supplier'   // Marketplace supplier reversed (withdrawals only)
   | 'user';      // End user reversed
 ```
 
@@ -213,21 +239,16 @@ enum GameId {
 }
 ```
 
-The `game` query parameter accepts the numeric value as either a string or number (e.g. `"730"` or `730`).
+The `game` query parameter accepts the numeric value as a string (e.g. `"730"`).
 
 ## Callback Payload
 
-The structure sent to your callback URL:
+State-change callbacks deliver the trade object directly as the body:
 
 ```typescript
-interface CallbackPayload {
-  payload: {
-    trade: ITrade;               // Full trade object
-    event: string;               // Event name (matches trade status)
-    timestamp: string;           // ISO 8601 timestamp
-    key: string;                 // HMAC-SHA256 signature
-  };
+interface CallbackBody {
+  trade: Trade;
 }
 ```
 
-The `key` is computed over the `trade` object using your API secret with canonical JSON serialization. See [Callbacks](/guides/callbacks) for verification code.
+The signature lives in the `X-AssetPay-Signature` header (format `t=<iso>,id=<delivery-id>,s=<hex>`), HMAC-SHA256 over `${deliveryId}.${timestamp}.${rawBody}`. See [Callbacks](/guides/callbacks) for verification code and the withdrawal approval envelope.

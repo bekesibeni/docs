@@ -12,7 +12,7 @@ Returns items currently available on the market for purchase (withdrawal). Suppo
 ## Request
 
 ```http
-GET https://api.assetpay.gg/client/market?game=730&search=awp&sort=price_asc&page=1&limit=50
+GET https://api.assetpay.gg/client/market?game=730&search=awp&sort=priceAsc&page=1&perPage=50
 Authorization: CLIENT_TOKEN
 ```
 
@@ -21,12 +21,12 @@ Authorization: CLIENT_TOKEN
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `game` | string | `730` | `"730"` (CS2) or `"252490"` (Rust) |
-| `search` | string | - | Search by item name |
-| `sort` | string | - | `"popularity"`, `"price_asc"`, or `"price_desc"` |
+| `search` | string | - | Search by item name (max 100 chars) |
+| `sort` | string | - | `relevance`, `priceAsc`, `priceDesc`, `nameAsc`, or `nameDesc` |
 | `minPrice` | number | - | Minimum price filter (USD) |
 | `maxPrice` | number | - | Maximum price filter (USD) |
 | `page` | number | `1` | Page number |
-| `limit` | number | `50` | Items per page (max `1000`) |
+| `perPage` | number | `50` | Items per page (min 1, max 1000) |
 
 ## Response
 
@@ -43,13 +43,12 @@ Authorization: CLIENT_TOKEN
         "type": "Sniper Rifle",
         "iconUrl": "IzMF03bk9WpSBq-S-ekoE33L-iLqGFHVaU25ZzQNQcXdEHOQ6UFc5FT_0NqFMOBBN-s...",
         "appid": 730,
-        "contextid": 2,
         "tradable": true,
         "marketPrice": 48.00,
         "offer": {
           "price": 45.00,
           "reference": "ref_market_456",
-          "delivery": "normal"
+          "delivery": "standard"
         },
         "exterior": "Field-Tested",
         "wear": "0.28123",
@@ -68,7 +67,7 @@ Authorization: CLIENT_TOKEN
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `items` | [InventoryItem](/reference/types#inventoryitem)[] | Available market items |
+| `items` | [Item](/reference/types#item)[] | Available market items |
 | `count` | number | Total matching items (for pagination) |
 
 ### Key Item Fields for Withdrawals
@@ -76,13 +75,12 @@ Authorization: CLIENT_TOKEN
 | Field | Description |
 |-------|-------------|
 | `id` | Pass back as `itemId` in the withdrawal request |
-| `offer.price` | Purchase cost in USD |
-| `offer.reference` | Must be passed in the withdrawal request |
-| `offer.delivery` | `"normal"` or `"auto"` delivery mode |
+| `offer.price` | Purchase cost in USD — pass this back as `items[].price` in the withdrawal request |
+| `offer.delivery` | `"standard"` (bot sources from supplier and sends a Steam trade offer) or `"instant"` (item already pre-positioned on the bot) |
 
 ## Rate Limits
 
 | Merchant Status | Limit |
 |----------------|-------|
-| Verified | 2,000 requests / min |
-| Unverified | 20 requests / min |
+| Verified | 300 requests / min |
+| Unverified | 30 requests / min |

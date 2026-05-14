@@ -10,7 +10,7 @@ The market endpoints return items currently available for purchase. This is what
 ## Fetching Market Items
 
 ```http
-GET https://api.assetpay.gg/client/market?game=730&page=1&limit=50
+GET https://api.assetpay.gg/client/market?game=730&page=1&perPage=50
 Authorization: CLIENT_TOKEN
 ```
 
@@ -29,13 +29,12 @@ Response:
         "type": "Sniper Rifle",
         "iconUrl": "IzMF03bk9WpSBq-S-ekoE33L-iLqGFHVaU25ZzQNQcXdEHOQ6UFc5FT_0NqFMOBBN-s...",
         "appid": 730,
-        "contextid": 2,
         "tradable": true,
         "marketPrice": 1850.00,
         "offer": {
           "price": 1720.50,
           "reference": "ref_market_456",
-          "delivery": "normal"
+          "delivery": "standard"
         },
         "exterior": "Factory New",
         "wear": "0.01234",
@@ -56,12 +55,12 @@ Response:
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `game` | string | `730` | `"730"` for CS2 or `"252490"` for Rust |
-| `search` | string | - | Search by item name |
-| `sort` | string | - | `"popularity"`, `"price_asc"`, or `"price_desc"` |
+| `search` | string | - | Search by item name (max 100 chars) |
+| `sort` | string | - | `relevance`, `priceAsc`, `priceDesc`, `nameAsc`, or `nameDesc` |
 | `minPrice` | number | - | Minimum price filter (USD) |
 | `maxPrice` | number | - | Maximum price filter (USD) |
 | `page` | number | `1` | Page number |
-| `limit` | number | `50` | Items per page. Use `-1` to get all items (ignores page). Max `1000`. |
+| `perPage` | number | `50` | Items per page (min 1, max 1000) |
 
 ## Search Suggestions
 
@@ -79,15 +78,16 @@ This returns a lightweight list of matching item names, faster than a full marke
 To get all available listings for a specific item type:
 
 ```http
-GET https://api.assetpay.gg/client/market/item?itemId=ITEM_ID&delivery=normal
+GET https://api.assetpay.gg/client/market/item?itemId=ITEM_ID&delivery=any
 Authorization: CLIENT_TOKEN
 ```
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `itemId` | string | Required | The item's market hash name or ID |
-| `delivery` | string | `normal` | `"normal"` or `"auto"` delivery mode |
+| `itemId` | string | Required | The marketplace item ID returned by `/client/market` |
+| `delivery` | string | `any` | `"any"`, `"standard"`, or `"instant"` — filters listings by delivery mode |
 | `page` | number | `1` | Page number |
+| `perPage` | number | `50` | Listings per page (max `100`) |
 
 This returns individual listings with different float values, stickers, and prices for the same item type. Useful when you want to let users pick a specific skin rather than just the cheapest one.
 
@@ -95,11 +95,11 @@ This returns individual listings with different float values, stickers, and pric
 
 For market items (withdrawals), the `offer.price` is what it costs to buy this item. This is the amount that gets deducted from the merchant's wallet balance.
 
-The `delivery` field indicates how the item will be delivered:
-- `"normal"` - Standard delivery through a trade offer
-- `"auto"` - Automated delivery (typically faster)
+The `delivery` field indicates how the item will be sourced:
+- `"standard"` – the bot sources the item from a marketplace supplier when the purchase is approved, then sends a Steam trade offer to the user
+- `"instant"` – the item is already pre-positioned on the bot and the trade offer is sent immediately
 
-Pass the item's `id`, `offer.price`, and `offer.reference` when initiating the withdrawal. AssetPay routes the purchase to the correct marketplace supplier internally.
+In both cases, the final delivery to the user is via a Steam trade offer they must accept. Pass the item's `id` and `offer.price` when initiating the withdrawal — AssetPay routes the purchase to the correct marketplace supplier internally.
 
 ## Keeping Prices Updated
 

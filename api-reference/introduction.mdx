@@ -75,19 +75,35 @@ The `requestId` is a UUID generated for each request. Include it when contacting
 
 ## Rate Limits
 
-Rate limits vary by endpoint and merchant verification status:
+Rate limits vary by endpoint and merchant verification status. Numbers below are per-merchant — limits are shared across all clients of the same merchant for `/client/*` routes.
 
-| Endpoint Group | Verified | Unverified |
-|---------------|----------|------------|
-| Client authentication | 1,000,000/hour | 100/hour |
-| Inventory | 1,000/min | 10/min |
-| Market | 2,000/min | 20/min |
-| Deposit/Withdraw | 500/min | 5/min |
-| Trade history | 3,000/min | 30/min |
-| Trade URL check | 100,000/hour | 100/hour |
-| Prices | 1,000/hour | 100/hour |
+### Client endpoints
 
-Rate limits are shared across all clients of the same merchant. If you have 100 users hitting the inventory endpoint, they all share the same 1,000/min bucket.
+| Endpoint | Verified | Unverified |
+|----------|----------|------------|
+| `GET /client/inventory` | 1,000/min | 10/min |
+| `GET /client/market` | 300/min | 30/min |
+| `GET /client/market/suggestions` | 600/min | 30/min |
+| `GET /client/market/item` | 600/min | 30/min |
+| `GET /client/trades` | 3,000/min | 30/min |
+| `POST /client/trading/deposit` | 500/min | 5/min |
+| `POST /client/trading/withdraw` | 500/min | 5/min |
+
+Deposits additionally enforce a per-client guard: max 5 concurrent active deposits + max 10 deposits per rolling 5-minute window per (merchant, clientSteamId).
+
+### Secure (merchant) endpoints
+
+| Endpoint | Verified | Unverified |
+|----------|----------|------------|
+| `POST /secure/check-tradeurl` | 100,000/hour | 100/hour |
+| `GET /secure/prices` | 1,000/hour | 100/hour |
+| `GET /secure/inventory` | 10,000/min | 100/min |
+| `POST /secure/sell` | 5,000/min | 50/min |
+| `POST /secure/buy` | 5,000/min | 50/min |
+| `GET /secure/market` | 3,000/min | 100/min |
+| `GET /secure/market/item` | 6,000/min | 100/min |
+| `GET /secure/trades` | 3,000/min | 100/min |
+| `GET /secure/trades/:tradeId` | 3,000/min | 100/min |
 
 When you hit a rate limit, you'll receive a `429` response with error code `1005` (`RATE_LIMITED`).
 

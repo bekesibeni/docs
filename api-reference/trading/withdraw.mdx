@@ -20,10 +20,7 @@ Authorization: CLIENT_TOKEN
   "items": [
     {
       "itemId": "e5f6g7h8-i9j0-1234-abcd-ef5678901234",
-      "offer": {
-        "price": 45.00,
-        "reference": "ref_market_789"
-      }
+      "price": 45.00
     }
   ],
   "game": "730",
@@ -36,9 +33,8 @@ Authorization: CLIENT_TOKEN
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `items` | array | Yes | Items to withdraw (min 1, max 50) |
-| `items[].itemId` | string | Yes | Item ID from market data (5-256 chars) |
-| `items[].offer.price` | number | Yes | Purchase price in USD (max \$100,000) |
-| `items[].offer.reference` | string | Yes | Offer reference from market data (1-256 chars) |
+| `items[].itemId` | string | Yes | Item ID from market data (5–256 chars) |
+| `items[].price` | number | Yes | Purchase price in USD (max \$100,000). Must equal the current price returned by `/client/market/item`. |
 | `game` | string | No | `"730"` or `"252490"`. Defaults to `"730"`. |
 | `externalId` | string | No | Your unique tracking ID (max 128 chars). Must be unique per trade. |
 
@@ -51,6 +47,7 @@ Authorization: CLIENT_TOKEN
   "data": {
     "id": "trade-uuid",
     "type": "withdraw",
+    "source": "client",
     "status": "initiated",
     "game": "730",
     "externalId": "wd_unique_789",
@@ -66,12 +63,11 @@ Authorization: CLIENT_TOKEN
         "type": "Sniper Rifle",
         "iconUrl": "IzMF03bk9WpSBq-S-ekoE33L-iLqGFHVaU25ZzQNQcXdEHOQ6UFc5FT_0NqFMOBBN-s...",
         "appid": 730,
-        "contextid": 2,
         "tradable": true,
         "offer": {
           "price": 45.00,
           "reference": "ref_market_789",
-          "delivery": "normal"
+          "delivery": "standard"
         },
         "status": "initiated"
       }
@@ -83,11 +79,15 @@ Authorization: CLIENT_TOKEN
 }
 ```
 
-The response is a full [ITrade](/reference/types#itrade) object. Each withdrawal item carries its own `status` field that mirrors the trade-level status as it progresses.
+The response is a full [Trade](/reference/types#trade) object. Each withdrawal item carries its own `status` field that mirrors the trade-level status as it progresses.
 
 ## How Balance Approval Works
 
-After this endpoint is called, AssetPay sends an `initiated` callback to your backend **before purchasing anything**. Your backend checks the user's balance, deducts it, and responds with `200` to approve. If the balance is insufficient, respond with `4xx` (e.g. `402 Payment Required`) to reject the trade. See the [Withdrawals guide](/guides/withdrawals#the-initiated-callback) for details.
+After this endpoint is called, AssetPay sends an `initiated` callback to your backend **before purchasing anything**. Your backend checks the user's balance, deducts it, and responds with `2xx` to approve. If the balance is insufficient, respond with `4xx` (e.g. `402 Payment Required`) to reject the trade. See the [Withdrawals guide](/guides/withdrawals#the-initiated-callback) for details.
+
+<Warning>
+Withdrawals require your merchant account to have an active callback URL configured. Calling this endpoint without one immediately fails with `MERCHANT_NO_CALLBACK_URL` (1705).
+</Warning>
 
 ## Rate Limits
 
@@ -112,3 +112,8 @@ Shared across all clients of the same merchant.
 | 14 | `LISTING_NOT_FOUND` | Marketplace listing not found |
 | 15 | `LISTING_PRICE_INVALID` | Listing has invalid price |
 | 16 | `INVALID_LISTING_ID` | Invalid listing ID format |
+| 20 | `WITHDRAW_IN_PROGRESS` | Another withdrawal is already processing for this user |
+| 1010 | `NO_BOTS_AVAILABLE` | No Steam bots online; retry shortly |
+| 1011 | `FLEET_DEGRADED` | Steam fleet degraded; retry shortly |
+| 1601 | `INVALID_AMOUNT` | One of the offer amounts was zero or negative |
+| 1705 | `MERCHANT_NO_CALLBACK_URL` | Merchant has no active callback URL configured |

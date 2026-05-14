@@ -1,0 +1,63 @@
+---
+title: "Get Self-Trade"
+description: "Fetch a single merchant self-trade by ID."
+---
+
+# GET /secure/trades/&#123;tradeId&#125;
+
+Returns one trade initiated via `/secure/sell` or `/secure/buy`. Scoped to the calling merchant — attempts to fetch another merchant's trade or a client trade return `404 TRADE_NOT_FOUND`.
+
+**Authentication:** Merchant API Key (`api-key` header)
+**Scope:** `CORE_ACCESS`
+
+## Request
+
+```http
+GET https://api.assetpay.gg/secure/trades/trade-uuid
+api-key: ap_...
+```
+
+## Response
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": {
+    "id": "trade-uuid",
+    "type": "withdraw",
+    "source": "self",
+    "status": "hold",
+    "game": "730",
+    "merchantId": "merchant-uuid",
+    "clientSteamID": "76561198012345678",
+    "clientTradeUrl": "https://steamcommunity.com/tradeoffer/new/?partner=12345&token=ABCDEFGH",
+    "items": [ /* InventoryItem[] */ ],
+    "totalPrice": 45.00,
+    "offerID": "9088123456",
+    "botInfo": {
+      "name": "tradingbot01",
+      "avatar": "https://...",
+      "steamId": "76561198..."
+    },
+    "createdAt": "2026-05-14T12:00:00.000Z",
+    "updatedAt": "2026-05-14T12:01:30.000Z"
+  }
+}
+```
+
+The response is a full [`Trade`](/reference/types#trade) object.
+
+## Rate Limits
+
+| Merchant Status | Limit |
+|----------------|-------|
+| Verified | 3,000 requests / min |
+| Unverified | 100 requests / min |
+
+## Errors
+
+| Code | Key | When |
+|------|-----|------|
+| 21 | `TRADE_NOT_FOUND` | The trade ID doesn't exist, belongs to another merchant, or is a `client`-source trade |
+| 23 | `INVALID_TRADE_ID` | The trade ID is not a valid UUID |

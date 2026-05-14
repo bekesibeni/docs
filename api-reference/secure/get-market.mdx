@@ -1,0 +1,52 @@
+---
+title: "Browse Market (Self-Trade)"
+description: "Search marketplace items available for self-trade purchase."
+---
+
+# GET /secure/market
+
+Merchant-facing equivalent of [`GET /client/market`](/api-reference/client/get-market). Returns marketplace items the merchant can buy via [`POST /secure/buy`](/api-reference/secure/buy). Same listings the merchant's clients see.
+
+**Authentication:** Merchant API Key (`api-key` header)
+**Scope:** `CORE_ACCESS`
+
+## Request
+
+```http
+GET https://api.assetpay.gg/secure/market?game=730&search=awp&sort=priceAsc&page=1&perPage=50
+api-key: ap_...
+```
+
+### Query Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `game` | string | `730` | `"730"` (CS2) or `"252490"` (Rust) |
+| `search` | string | — | Search by item name (max 100 chars) |
+| `sort` | string | — | `relevance`, `priceAsc`, `priceDesc`, `nameAsc`, or `nameDesc` |
+| `minPrice` | number | — | Minimum price filter (USD) |
+| `maxPrice` | number | — | Maximum price filter (USD) |
+| `page` | number | `1` | Page number |
+| `perPage` | number | `50` | Items per page (min 1, max 1000) |
+
+## Response
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": {
+    "items": [ /* InventoryItem[] */ ],
+    "count": 1523
+  }
+}
+```
+
+See [`GET /client/market`](/api-reference/client/get-market#response) for the full field list.
+
+## Rate Limits
+
+| Merchant Status | Limit |
+|----------------|-------|
+| Verified | 3,000 requests / min |
+| Unverified | 100 requests / min |
