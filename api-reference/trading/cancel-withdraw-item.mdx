@@ -1,0 +1,71 @@
+---
+title: "Cancel Withdrawal Item"
+description: "Cancel a single undelivered withdrawal item (CS2 / Skinshark only)."
+---
+
+# POST /client/trading/withdraw/{tradeId}/items/{itemId}/cancel
+
+Requests cancellation of a single undelivered withdrawal item. AssetPay asks the marketplace supplier to cancel the purchase; on success your merchant wallet is refunded automatically.
+
+**Authentication:** Client Token (`Authorization` header)
+
+<Note>
+CS2 (Skinshark) withdrawals only. Rust withdrawals are fulfilled by a polling supplier with no cancel API and cannot be cancelled.
+</Note>
+
+## Request
+
+```http
+POST https://api.assetpay.gg/client/trading/withdraw/{tradeId}/items/{itemId}/cancel
+Authorization: CLIENT_TOKEN
+```
+
+### Path Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `tradeId` | string (uuid) | Yes | The withdrawal trade's ID. |
+| `itemId` | string (uuid) | Yes | The item's ID within that trade (the `id` of an entry in the trade's `items` array). |
+
+## When an item can be cancelled
+
+A cancel is only accepted when **all** of the following hold:
+
+- The item belongs to a **withdrawal** trade owned by the authenticated user.
+- The item is a **CS2 (Skinshark)** item.
+- The item is **at least 30 minutes old** (measured from when it was created).
+- The item is **not** already in a terminal state (`completed`, `failed`, `reverted`, `canceled`).
+
+## Response
+
+```json
+{
+  "requestId": "...",
+  "success": true,
+  "data": {
+    "tradeId": "trade-uuid",
+    "itemId": "item-uuid",
+    "status": "cancelled"
+  }
+}
+```
+
+A `200` only confirms the marketplace **accepted** the cancellation. AssetPay does **not** change the item state inline — the refund and the transition to `reverted` arrive asynchronously through the standard `trade.*` [callback](/guides/callbacks). Poll `GET /client/trades/{id}` or rely on callbacks for the final state, and refund the user's balance when you receive the reverted callback.
+
+## Rate Limits
+
+| Merchant Status | Limit |
+|----------------|-------|
+| Verified | 60 requests / min |
+| Unverified | 10 requests / min |
+
+Shared across all clients of the same merchant.
+
+## Errors
+
+| Code | Key | When |
+|------|-----|------|
+| 27 | `TRADE_CANCEL_TOO_SOON` | The item is younger than 30 minutes. Retry after the 30-minute window. |
+| 28 | `TRADE_NOT_CANCELLABLE` | Not cancellable: not a withdrawal, not a CS2/Skinshark item, already in a terminal state, or the marketplace rejected the cancel. |
+| 1300 | `FORBIDDEN` | The trade does not belong to the authenticated user. |
+| 2201 | `ITEM_NOT_FOUND` | No item with that `itemId` exists under the given `tradeId`. |

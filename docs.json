@@ -79,7 +79,8 @@
             "group": "Trading",
             "pages": [
               "api-reference/trading/deposit",
-              "api-reference/trading/withdraw"
+              "api-reference/trading/withdraw",
+              "api-reference/trading/cancel-withdraw-item"
             ]
           },
           {

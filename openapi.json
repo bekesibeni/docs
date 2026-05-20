@@ -1235,7 +1235,8 @@
                                 "type": "integer"
                               },
                               "name": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Omitted on bare withdraw items where AssetPay has no Steam-side metadata yet"
                               },
                               "marketHashName": {
                                 "type": "string"
@@ -1280,7 +1281,7 @@
                                   },
                                   "reference": {
                                     "type": "string",
-                                    "description": "Marketplace listing reference"
+                                    "description": "Marketplace product reference. On a market listing this is the parent itemId you queried `/market/item` with (hex, e.g. \"0010f8d48278ccb8\"); the listing-specific id is the `id` field above."
                                   },
                                   "delivery": {
                                     "type": "string",
@@ -1298,8 +1299,7 @@
                                   }
                                 },
                                 "required": [
-                                  "price",
-                                  "reference"
+                                  "price"
                                 ]
                               },
                               "exterior": {
@@ -1410,10 +1410,6 @@
                             "required": [
                               "id",
                               "appid",
-                              "name",
-                              "marketHashName",
-                              "type",
-                              "iconUrl",
                               "tradable"
                             ]
                           }
@@ -1906,7 +1902,8 @@
                                 "type": "integer"
                               },
                               "name": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Omitted on bare withdraw items where AssetPay has no Steam-side metadata yet"
                               },
                               "marketHashName": {
                                 "type": "string"
@@ -1951,7 +1948,7 @@
                                   },
                                   "reference": {
                                     "type": "string",
-                                    "description": "Marketplace listing reference"
+                                    "description": "Marketplace product reference. On a market listing this is the parent itemId you queried `/market/item` with (hex, e.g. \"0010f8d48278ccb8\"); the listing-specific id is the `id` field above."
                                   },
                                   "delivery": {
                                     "type": "string",
@@ -1969,8 +1966,7 @@
                                   }
                                 },
                                 "required": [
-                                  "price",
-                                  "reference"
+                                  "price"
                                 ]
                               },
                               "exterior": {
@@ -2081,10 +2077,6 @@
                             "required": [
                               "id",
                               "appid",
-                              "name",
-                              "marketHashName",
-                              "type",
-                              "iconUrl",
                               "tradable"
                             ]
                           }
@@ -2645,7 +2637,8 @@
                                 "type": "integer"
                               },
                               "name": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Omitted on bare withdraw items where AssetPay has no Steam-side metadata yet"
                               },
                               "marketHashName": {
                                 "type": "string"
@@ -2690,7 +2683,7 @@
                                   },
                                   "reference": {
                                     "type": "string",
-                                    "description": "Marketplace listing reference"
+                                    "description": "Marketplace product reference. On a market listing this is the parent itemId you queried `/market/item` with (hex, e.g. \"0010f8d48278ccb8\"); the listing-specific id is the `id` field above."
                                   },
                                   "delivery": {
                                     "type": "string",
@@ -2708,8 +2701,7 @@
                                   }
                                 },
                                 "required": [
-                                  "price",
-                                  "reference"
+                                  "price"
                                 ]
                               },
                               "exterior": {
@@ -2820,10 +2812,6 @@
                             "required": [
                               "id",
                               "appid",
-                              "name",
-                              "marketHashName",
-                              "type",
-                              "iconUrl",
                               "tradable"
                             ]
                           }
@@ -3357,7 +3345,8 @@
                                 "type": "integer"
                               },
                               "name": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Omitted on bare withdraw items where AssetPay has no Steam-side metadata yet"
                               },
                               "marketHashName": {
                                 "type": "string"
@@ -3402,7 +3391,7 @@
                                   },
                                   "reference": {
                                     "type": "string",
-                                    "description": "Marketplace listing reference"
+                                    "description": "Marketplace product reference. On a market listing this is the parent itemId you queried `/market/item` with (hex, e.g. \"0010f8d48278ccb8\"); the listing-specific id is the `id` field above."
                                   },
                                   "delivery": {
                                     "type": "string",
@@ -3420,8 +3409,7 @@
                                   }
                                 },
                                 "required": [
-                                  "price",
-                                  "reference"
+                                  "price"
                                 ]
                               },
                               "exterior": {
@@ -3532,10 +3520,6 @@
                             "required": [
                               "id",
                               "appid",
-                              "name",
-                              "marketHashName",
-                              "type",
-                              "iconUrl",
                               "tradable"
                             ]
                           }
@@ -3887,7 +3871,8 @@
                             "type": "integer"
                           },
                           "name": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "Omitted on bare withdraw items where AssetPay has no Steam-side metadata yet"
                           },
                           "marketHashName": {
                             "type": "string"
@@ -3932,7 +3917,7 @@
                               },
                               "reference": {
                                 "type": "string",
-                                "description": "Marketplace listing reference"
+                                "description": "Marketplace product reference. On a market listing this is the parent itemId you queried `/market/item` with (hex, e.g. \"0010f8d48278ccb8\"); the listing-specific id is the `id` field above."
                               },
                               "delivery": {
                                 "type": "string",
@@ -3950,8 +3935,7 @@
                               }
                             },
                             "required": [
-                              "price",
-                              "reference"
+                              "price"
                             ]
                           },
                           "exterior": {
@@ -4062,10 +4046,6 @@
                         "required": [
                           "id",
                           "appid",
-                          "name",
-                          "marketHashName",
-                          "type",
-                          "iconUrl",
                           "tradable"
                         ]
                       }
@@ -4526,7 +4506,8 @@
                                       "type": "integer"
                                     },
                                     "name": {
-                                      "type": "string"
+                                      "type": "string",
+                                      "description": "Omitted on bare withdraw items where AssetPay has no Steam-side metadata yet"
                                     },
                                     "marketHashName": {
                                       "type": "string"
@@ -4571,7 +4552,7 @@
                                         },
                                         "reference": {
                                           "type": "string",
-                                          "description": "Marketplace listing reference"
+                                          "description": "Marketplace product reference. On a market listing this is the parent itemId you queried `/market/item` with (hex, e.g. \"0010f8d48278ccb8\"); the listing-specific id is the `id` field above."
                                         },
                                         "delivery": {
                                           "type": "string",
@@ -4589,8 +4570,7 @@
                                         }
                                       },
                                       "required": [
-                                        "price",
-                                        "reference"
+                                        "price"
                                       ]
                                     },
                                     "exterior": {
@@ -4701,10 +4681,6 @@
                                   "required": [
                                     "id",
                                     "appid",
-                                    "name",
-                                    "marketHashName",
-                                    "type",
-                                    "iconUrl",
                                     "tradable"
                                   ]
                                 }
@@ -5178,7 +5154,8 @@
                                 "type": "integer"
                               },
                               "name": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Omitted on bare withdraw items where AssetPay has no Steam-side metadata yet"
                               },
                               "marketHashName": {
                                 "type": "string"
@@ -5223,7 +5200,7 @@
                                   },
                                   "reference": {
                                     "type": "string",
-                                    "description": "Marketplace listing reference"
+                                    "description": "Marketplace product reference. On a market listing this is the parent itemId you queried `/market/item` with (hex, e.g. \"0010f8d48278ccb8\"); the listing-specific id is the `id` field above."
                                   },
                                   "delivery": {
                                     "type": "string",
@@ -5241,8 +5218,7 @@
                                   }
                                 },
                                 "required": [
-                                  "price",
-                                  "reference"
+                                  "price"
                                 ]
                               },
                               "exterior": {
@@ -5353,10 +5329,6 @@
                             "required": [
                               "id",
                               "appid",
-                              "name",
-                              "marketHashName",
-                              "type",
-                              "iconUrl",
                               "tradable"
                             ]
                           }
@@ -5834,7 +5806,8 @@
                                 "type": "integer"
                               },
                               "name": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Omitted on bare withdraw items where AssetPay has no Steam-side metadata yet"
                               },
                               "marketHashName": {
                                 "type": "string"
@@ -5879,7 +5852,7 @@
                                   },
                                   "reference": {
                                     "type": "string",
-                                    "description": "Marketplace listing reference"
+                                    "description": "Marketplace product reference. On a market listing this is the parent itemId you queried `/market/item` with (hex, e.g. \"0010f8d48278ccb8\"); the listing-specific id is the `id` field above."
                                   },
                                   "delivery": {
                                     "type": "string",
@@ -5897,8 +5870,7 @@
                                   }
                                 },
                                 "required": [
-                                  "price",
-                                  "reference"
+                                  "price"
                                 ]
                               },
                               "exterior": {
@@ -6009,10 +5981,6 @@
                             "required": [
                               "id",
                               "appid",
-                              "name",
-                              "marketHashName",
-                              "type",
-                              "iconUrl",
                               "tradable"
                             ]
                           }
@@ -6433,7 +6401,8 @@
                                       "type": "integer"
                                     },
                                     "name": {
-                                      "type": "string"
+                                      "type": "string",
+                                      "description": "Omitted on bare withdraw items where AssetPay has no Steam-side metadata yet"
                                     },
                                     "marketHashName": {
                                       "type": "string"
@@ -6478,7 +6447,7 @@
                                         },
                                         "reference": {
                                           "type": "string",
-                                          "description": "Marketplace listing reference"
+                                          "description": "Marketplace product reference. On a market listing this is the parent itemId you queried `/market/item` with (hex, e.g. \"0010f8d48278ccb8\"); the listing-specific id is the `id` field above."
                                         },
                                         "delivery": {
                                           "type": "string",
@@ -6496,8 +6465,7 @@
                                         }
                                       },
                                       "required": [
-                                        "price",
-                                        "reference"
+                                        "price"
                                       ]
                                     },
                                     "exterior": {
@@ -6608,10 +6576,6 @@
                                   "required": [
                                     "id",
                                     "appid",
-                                    "name",
-                                    "marketHashName",
-                                    "type",
-                                    "iconUrl",
                                     "tradable"
                                   ]
                                 }
@@ -6973,6 +6937,1465 @@
         }
       }
     },
+    "/client/market/suggestions": {
+      "get": {
+        "summary": "Marketplace search suggestions",
+        "description": "Returns search-as-you-type suggestions for marketplace items. CS2 only (Skinshark-backed). Use the returned itemIds with /client/market/item to fetch listings.",
+        "tags": [
+          "Client"
+        ],
+        "security": [
+          {
+            "ClientToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "required": true,
+            "name": "q",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search suggestions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique request identifier"
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "suggestions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "itemId": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "iconUrl": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "itemId",
+                              "name"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "suggestions"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "requestId",
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - validation failed or invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique request identifier"
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "Numeric error code (see error-codes.ts)"
+                        },
+                        "key": {
+                          "type": "string",
+                          "description": "Machine-readable error key"
+                        },
+                        "message": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          ],
+                          "description": "Human-readable error message(s)"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "key",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "requestId",
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique request identifier"
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "Numeric error code (see error-codes.ts)"
+                        },
+                        "key": {
+                          "type": "string",
+                          "description": "Machine-readable error key"
+                        },
+                        "message": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          ],
+                          "description": "Human-readable error message(s)"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "key",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "requestId",
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique request identifier"
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "Numeric error code (see error-codes.ts)"
+                        },
+                        "key": {
+                          "type": "string",
+                          "description": "Machine-readable error key"
+                        },
+                        "message": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          ],
+                          "description": "Human-readable error message(s)"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "key",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "requestId",
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests - rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique request identifier"
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "Numeric error code (see error-codes.ts)"
+                        },
+                        "key": {
+                          "type": "string",
+                          "description": "Machine-readable error key"
+                        },
+                        "message": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          ],
+                          "description": "Human-readable error message(s)"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "key",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "requestId",
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/client/market": {
+      "get": {
+        "summary": "Browse marketplace items",
+        "description": "Search and paginate the merchant marketplace. CS2 returns a default listing slice; Rust returns the full RustSkins marketplace. Filterable by search term, sort, and price range.",
+        "tags": [
+          "Client"
+        ],
+        "security": [
+          {
+            "ClientToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "default": 730
+            },
+            "required": false,
+            "name": "game",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "required": false,
+            "name": "search",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "relevance",
+                "priceAsc",
+                "priceDesc",
+                "nameAsc",
+                "nameDesc"
+              ]
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "required": false,
+            "name": "minPrice",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "required": false,
+            "name": "maxPrice",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "default": 1
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 50
+            },
+            "required": false,
+            "name": "perPage",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Marketplace search results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique request identifier"
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "appid": {
+                                "type": "integer"
+                              },
+                              "name": {
+                                "type": "string",
+                                "description": "Omitted on bare withdraw items where AssetPay has no Steam-side metadata yet"
+                              },
+                              "marketHashName": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              },
+                              "iconUrl": {
+                                "type": "string"
+                              },
+                              "tradable": {
+                                "type": "boolean"
+                              },
+                              "amount": {
+                                "type": "number"
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "initiated",
+                                  "pending",
+                                  "active",
+                                  "hold",
+                                  "completed",
+                                  "failed",
+                                  "canceled",
+                                  "reverted",
+                                  "escrow"
+                                ],
+                                "description": "Per-item status (withdrawals only)"
+                              },
+                              "marketPrice": {
+                                "type": "number",
+                                "description": "BUFF163 market price in USD"
+                              },
+                              "offer": {
+                                "type": "object",
+                                "properties": {
+                                  "price": {
+                                    "type": "number",
+                                    "description": "Offer price in USD"
+                                  },
+                                  "reference": {
+                                    "type": "string",
+                                    "description": "Marketplace product reference. On a market listing this is the parent itemId you queried `/market/item` with (hex, e.g. \"0010f8d48278ccb8\"); the listing-specific id is the `id` field above."
+                                  },
+                                  "delivery": {
+                                    "type": "string",
+                                    "enum": [
+                                      "standard",
+                                      "instant"
+                                    ],
+                                    "description": "Skinshark delivery mode"
+                                  },
+                                  "maxAmount": {
+                                    "type": "number"
+                                  },
+                                  "accepted": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "required": [
+                                  "price"
+                                ]
+                              },
+                              "exterior": {
+                                "type": "string"
+                              },
+                              "rarity": {
+                                "type": "string"
+                              },
+                              "color": {
+                                "type": "string"
+                              },
+                              "wear": {
+                                "type": "string"
+                              },
+                              "paintSeed": {
+                                "type": "integer"
+                              },
+                              "doppler": {
+                                "type": "object",
+                                "properties": {
+                                  "status": {
+                                    "type": "integer"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "paintIndex": {
+                                    "type": "integer"
+                                  }
+                                },
+                                "required": [
+                                  "name"
+                                ]
+                              },
+                              "fade": {
+                                "type": "object",
+                                "properties": {
+                                  "percentage": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": [
+                                  "percentage"
+                                ]
+                              },
+                              "hardened": {
+                                "type": "object",
+                                "properties": {
+                                  "status": {
+                                    "type": "integer"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "status",
+                                  "name"
+                                ]
+                              },
+                              "stickers": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "marketHashName": {
+                                      "type": "string"
+                                    },
+                                    "slot": {
+                                      "type": "integer"
+                                    },
+                                    "wear": {
+                                      "type": "number"
+                                    },
+                                    "iconUrl": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "name",
+                                    "slot",
+                                    "iconUrl"
+                                  ]
+                                }
+                              },
+                              "charm": {
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "marketHashName": {
+                                    "type": "string"
+                                  },
+                                  "iconUrl": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "name",
+                                  "iconUrl"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "appid",
+                              "tradable"
+                            ]
+                          }
+                        },
+                        "count": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "items",
+                        "count"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "requestId",
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - validation failed or invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique request identifier"
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "Numeric error code (see error-codes.ts)"
+                        },
+                        "key": {
+                          "type": "string",
+                          "description": "Machine-readable error key"
+                        },
+                        "message": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          ],
+                          "description": "Human-readable error message(s)"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "key",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "requestId",
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique request identifier"
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "Numeric error code (see error-codes.ts)"
+                        },
+                        "key": {
+                          "type": "string",
+                          "description": "Machine-readable error key"
+                        },
+                        "message": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          ],
+                          "description": "Human-readable error message(s)"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "key",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "requestId",
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique request identifier"
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "Numeric error code (see error-codes.ts)"
+                        },
+                        "key": {
+                          "type": "string",
+                          "description": "Machine-readable error key"
+                        },
+                        "message": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          ],
+                          "description": "Human-readable error message(s)"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "key",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "requestId",
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests - rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique request identifier"
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "Numeric error code (see error-codes.ts)"
+                        },
+                        "key": {
+                          "type": "string",
+                          "description": "Machine-readable error key"
+                        },
+                        "message": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          ],
+                          "description": "Human-readable error message(s)"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "key",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "requestId",
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/client/market/item": {
+      "get": {
+        "summary": "Get marketplace listings for one item",
+        "description": "Returns the available listings (price/wear/stickers/etc.) for a specific item type. CS2 only — pass an itemId from /client/market/suggestions or /client/market.",
+        "tags": [
+          "Client"
+        ],
+        "security": [
+          {
+            "ClientToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "required": true,
+            "name": "itemId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "any",
+                "standard",
+                "instant"
+              ],
+              "default": "any"
+            },
+            "required": false,
+            "name": "delivery",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "default": 1
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            },
+            "required": false,
+            "name": "perPage",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Available listings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique request identifier"
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "appid": {
+                            "type": "integer"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Omitted on bare withdraw items where AssetPay has no Steam-side metadata yet"
+                          },
+                          "marketHashName": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          },
+                          "iconUrl": {
+                            "type": "string"
+                          },
+                          "tradable": {
+                            "type": "boolean"
+                          },
+                          "amount": {
+                            "type": "number"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "initiated",
+                              "pending",
+                              "active",
+                              "hold",
+                              "completed",
+                              "failed",
+                              "canceled",
+                              "reverted",
+                              "escrow"
+                            ],
+                            "description": "Per-item status (withdrawals only)"
+                          },
+                          "marketPrice": {
+                            "type": "number",
+                            "description": "BUFF163 market price in USD"
+                          },
+                          "offer": {
+                            "type": "object",
+                            "properties": {
+                              "price": {
+                                "type": "number",
+                                "description": "Offer price in USD"
+                              },
+                              "reference": {
+                                "type": "string",
+                                "description": "Marketplace product reference. On a market listing this is the parent itemId you queried `/market/item` with (hex, e.g. \"0010f8d48278ccb8\"); the listing-specific id is the `id` field above."
+                              },
+                              "delivery": {
+                                "type": "string",
+                                "enum": [
+                                  "standard",
+                                  "instant"
+                                ],
+                                "description": "Skinshark delivery mode"
+                              },
+                              "maxAmount": {
+                                "type": "number"
+                              },
+                              "accepted": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "price"
+                            ]
+                          },
+                          "exterior": {
+                            "type": "string"
+                          },
+                          "rarity": {
+                            "type": "string"
+                          },
+                          "color": {
+                            "type": "string"
+                          },
+                          "wear": {
+                            "type": "string"
+                          },
+                          "paintSeed": {
+                            "type": "integer"
+                          },
+                          "doppler": {
+                            "type": "object",
+                            "properties": {
+                              "status": {
+                                "type": "integer"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "paintIndex": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "name"
+                            ]
+                          },
+                          "fade": {
+                            "type": "object",
+                            "properties": {
+                              "percentage": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "percentage"
+                            ]
+                          },
+                          "hardened": {
+                            "type": "object",
+                            "properties": {
+                              "status": {
+                                "type": "integer"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "status",
+                              "name"
+                            ]
+                          },
+                          "stickers": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "marketHashName": {
+                                  "type": "string"
+                                },
+                                "slot": {
+                                  "type": "integer"
+                                },
+                                "wear": {
+                                  "type": "number"
+                                },
+                                "iconUrl": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "name",
+                                "slot",
+                                "iconUrl"
+                              ]
+                            }
+                          },
+                          "charm": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "marketHashName": {
+                                "type": "string"
+                              },
+                              "iconUrl": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "iconUrl"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "appid",
+                          "tradable"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "requestId",
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - validation failed or invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique request identifier"
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "Numeric error code (see error-codes.ts)"
+                        },
+                        "key": {
+                          "type": "string",
+                          "description": "Machine-readable error key"
+                        },
+                        "message": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          ],
+                          "description": "Human-readable error message(s)"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "key",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "requestId",
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique request identifier"
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "Numeric error code (see error-codes.ts)"
+                        },
+                        "key": {
+                          "type": "string",
+                          "description": "Machine-readable error key"
+                        },
+                        "message": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          ],
+                          "description": "Human-readable error message(s)"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "key",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "requestId",
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique request identifier"
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "Numeric error code (see error-codes.ts)"
+                        },
+                        "key": {
+                          "type": "string",
+                          "description": "Machine-readable error key"
+                        },
+                        "message": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          ],
+                          "description": "Human-readable error message(s)"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "key",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "requestId",
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique request identifier"
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "Numeric error code (see error-codes.ts)"
+                        },
+                        "key": {
+                          "type": "string",
+                          "description": "Machine-readable error key"
+                        },
+                        "message": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          ],
+                          "description": "Human-readable error message(s)"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "key",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "requestId",
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests - rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique request identifier"
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "Numeric error code (see error-codes.ts)"
+                        },
+                        "key": {
+                          "type": "string",
+                          "description": "Machine-readable error key"
+                        },
+                        "message": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          ],
+                          "description": "Human-readable error message(s)"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "key",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "requestId",
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/client/trading/deposit": {
       "post": {
         "summary": "Initiate a skin deposit",
@@ -7130,7 +8553,8 @@
                                 "type": "integer"
                               },
                               "name": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Omitted on bare withdraw items where AssetPay has no Steam-side metadata yet"
                               },
                               "marketHashName": {
                                 "type": "string"
@@ -7175,7 +8599,7 @@
                                   },
                                   "reference": {
                                     "type": "string",
-                                    "description": "Marketplace listing reference"
+                                    "description": "Marketplace product reference. On a market listing this is the parent itemId you queried `/market/item` with (hex, e.g. \"0010f8d48278ccb8\"); the listing-specific id is the `id` field above."
                                   },
                                   "delivery": {
                                     "type": "string",
@@ -7193,8 +8617,7 @@
                                   }
                                 },
                                 "required": [
-                                  "price",
-                                  "reference"
+                                  "price"
                                 ]
                               },
                               "exterior": {
@@ -7305,10 +8728,6 @@
                             "required": [
                               "id",
                               "appid",
-                              "name",
-                              "marketHashName",
-                              "type",
-                              "iconUrl",
                               "tradable"
                             ]
                           }
@@ -7805,7 +9224,8 @@
                                 "type": "integer"
                               },
                               "name": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Omitted on bare withdraw items where AssetPay has no Steam-side metadata yet"
                               },
                               "marketHashName": {
                                 "type": "string"
@@ -7850,7 +9270,7 @@
                                   },
                                   "reference": {
                                     "type": "string",
-                                    "description": "Marketplace listing reference"
+                                    "description": "Marketplace product reference. On a market listing this is the parent itemId you queried `/market/item` with (hex, e.g. \"0010f8d48278ccb8\"); the listing-specific id is the `id` field above."
                                   },
                                   "delivery": {
                                     "type": "string",
@@ -7868,8 +9288,7 @@
                                   }
                                 },
                                 "required": [
-                                  "price",
-                                  "reference"
+                                  "price"
                                 ]
                               },
                               "exterior": {
@@ -7980,10 +9399,6 @@
                             "required": [
                               "id",
                               "appid",
-                              "name",
-                              "marketHashName",
-                              "type",
-                              "iconUrl",
                               "tradable"
                             ]
                           }
@@ -8213,6 +9628,392 @@
           },
           "403": {
             "description": "Forbidden - insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique request identifier"
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "Numeric error code (see error-codes.ts)"
+                        },
+                        "key": {
+                          "type": "string",
+                          "description": "Machine-readable error key"
+                        },
+                        "message": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          ],
+                          "description": "Human-readable error message(s)"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "key",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "requestId",
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests - rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique request identifier"
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "Numeric error code (see error-codes.ts)"
+                        },
+                        "key": {
+                          "type": "string",
+                          "description": "Machine-readable error key"
+                        },
+                        "message": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          ],
+                          "description": "Human-readable error message(s)"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "key",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "requestId",
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/client/trading/withdraw/{tradeId}/items/{itemId}/cancel": {
+      "post": {
+        "summary": "Cancel an undelivered withdrawal item",
+        "description": "Requests cancellation of a single undelivered withdrawal item. Skinshark (CS2) items only — Rust withdrawals cannot be cancelled. The item must be at least 30 minutes old and not yet in a terminal state. On success the refund flows back via the trade webhook; the response only confirms the cancellation was accepted.",
+        "tags": [
+          "Withdrawals"
+        ],
+        "security": [
+          {
+            "ClientToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Trade UUID"
+            },
+            "required": true,
+            "description": "Trade UUID",
+            "name": "tradeId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Inventory item UUID"
+            },
+            "required": true,
+            "description": "Inventory item UUID",
+            "name": "itemId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cancellation accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique request identifier"
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "tradeId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "itemId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "cancelled"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "tradeId",
+                        "itemId",
+                        "status"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "requestId",
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - validation failed or invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique request identifier"
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "Numeric error code (see error-codes.ts)"
+                        },
+                        "key": {
+                          "type": "string",
+                          "description": "Machine-readable error key"
+                        },
+                        "message": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          ],
+                          "description": "Human-readable error message(s)"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "key",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "requestId",
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique request identifier"
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "Numeric error code (see error-codes.ts)"
+                        },
+                        "key": {
+                          "type": "string",
+                          "description": "Machine-readable error key"
+                        },
+                        "message": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          ],
+                          "description": "Human-readable error message(s)"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "key",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "requestId",
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique request identifier"
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "integer",
+                          "description": "Numeric error code (see error-codes.ts)"
+                        },
+                        "key": {
+                          "type": "string",
+                          "description": "Machine-readable error key"
+                        },
+                        "message": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          ],
+                          "description": "Human-readable error message(s)"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "key",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "requestId",
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {

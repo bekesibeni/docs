@@ -161,6 +161,14 @@ In rare cases, a completed withdrawal can be reversed. This happens when either 
 
 When a withdrawal is reverted, your merchant wallet is automatically refunded by AssetPay.
 
+## Cancelling a Withdrawal Item
+
+A user can cancel a withdrawal item that hasn't been delivered yet — for example when a CS2 purchase is taking too long to source. Call `POST /client/trading/withdraw/{tradeId}/items/{itemId}/cancel` with the trade ID and the item's `id`.
+
+Cancellation is **CS2 (Skinshark) only** — Rust withdrawals use a polling supplier with no cancel API. An item can only be cancelled when it is at least **30 minutes old** and not yet in a terminal state (`completed`, `failed`, `reverted`, `canceled`); otherwise you'll get `TRADE_CANCEL_TOO_SOON` (27) or `TRADE_NOT_CANCELLABLE` (28).
+
+A successful response only confirms the marketplace accepted the cancel — AssetPay doesn't change the item state inline. The item transitions to `reverted` and your merchant wallet is refunded asynchronously via the usual callback, exactly like a [trade reversal](#trade-reversals). Refund the user's balance when you receive that `reverted` callback. See the [API reference](/api-reference/trading/cancel-withdraw-item) for the full contract.
+
 ## Per-Item Status
 
 For multi-item withdrawals, each item in the `items` array carries its own `status` field. It uses the same values as the trade-level [TradeStatus](/reference/types#tradestatus) and mirrors how the individual purchase progresses:
